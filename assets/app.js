@@ -98,7 +98,7 @@ function languageColor(language) {
 
 function relativeDate(value) {
   const date = new Date(value);
-  const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const elapsedSeconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
   const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
   const intervals = [
     ["year", 31_536_000],
@@ -110,18 +110,30 @@ function relativeDate(value) {
   ];
 
   for (const [unit, size] of intervals) {
-    if (Math.abs(seconds) >= size) {
-      return formatter.format(Math.round(seconds / size), unit);
+    if (elapsedSeconds >= size) {
+      return formatter.format(-Math.round(elapsedSeconds / size), unit);
     }
   }
 
-  return formatter.format(seconds, "second");
+  return formatter.format(-elapsedSeconds || 0, "second");
 }
 
 function badge(label, className = "") {
   const item = document.createElement("span");
   item.className = `badge ${className}`.trim();
   item.textContent = label;
+  return item;
+}
+
+function metric(glyph, count, singular, plural) {
+  const item = document.createElement("span");
+  const symbol = document.createElement("span");
+  symbol.setAttribute("aria-hidden", "true");
+  symbol.textContent = `${glyph} ${count.toLocaleString()}`;
+  const label = document.createElement("span");
+  label.className = "visually-hidden";
+  label.textContent = `${count.toLocaleString()} ${count === 1 ? singular : plural}`;
+  item.append(symbol, label);
   return item;
 }
 
@@ -162,12 +174,8 @@ function createRepoCard(repo) {
     metadata.append(language);
   }
 
-  const stars = document.createElement("span");
-  stars.textContent = `★ ${repo.stargazers_count.toLocaleString()}`;
-  stars.title = "Stars";
-  const forks = document.createElement("span");
-  forks.textContent = `⑂ ${repo.forks_count.toLocaleString()}`;
-  forks.title = "Forks";
+  const stars = metric("★", repo.stargazers_count, "star", "stars");
+  const forks = metric("⑂", repo.forks_count, "fork", "forks");
   const updated = document.createElement("time");
   updated.dateTime = repo.updated_at;
   updated.textContent = `Updated ${relativeDate(repo.updated_at)}`;
@@ -250,7 +258,7 @@ async function loadRepositories() {
     if (accessToken) {
       try {
         const accessible = await fetchAll(
-          "/user/repos?affiliation=owner,collaborator,organization_member&sort=updated",
+          `/users/${ACCOUNT}/repos?sort=updated`,
           accessToken,
         );
         for (const repo of accessible) {

@@ -275,40 +275,61 @@ h1 {
   gap: var(--space-3);
 }
 
-.theme-toggle,
-.view-toggle {
+.segmented {
   display: inline-flex;
+  align-items: stretch;
+  gap: 0.15rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
   background: var(--surface-muted);
   padding: 0.2rem;
 }
 
-.theme-btn,
-.view-btn {
+.segmented-option {
+  box-sizing: border-box;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
+  gap: 0.35rem;
+  width: 2.125rem;
+  min-width: 2.125rem;
+  height: 2.125rem;
+  min-height: 0;
+  padding: 0;
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.theme-btn:hover,
-.view-btn:hover {
+.theme-toggle .segmented-option {
+  width: auto;
+  padding: 0 0.6rem;
+}
+
+.segmented-option .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.segmented-label {
+  white-space: nowrap;
+}
+
+.segmented-option:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
 
-.theme-btn[aria-pressed="true"],
-.view-btn[aria-pressed="true"] {
-  background: var(--accent);
-  color: #ffffff;
+.segmented-option[aria-checked="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .signin-area {
@@ -883,6 +904,26 @@ footer {
 @media (max-width: 420px) {
   .stats-strip {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .theme-toggle .segmented-option {
+    width: 2.125rem;
+    padding: 0;
+  }
+
+  .theme-toggle .segmented-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 }
 

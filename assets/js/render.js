@@ -27,6 +27,8 @@ export function relativeDate(value) {
 function icon(name) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("class", "icon");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("focusable", "false");
   svg.setAttribute("aria-hidden", "true");
   const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
   use.setAttribute("href", `#icon-${name}`);
@@ -56,9 +58,12 @@ function metric(iconName, count, singular, plural) {
 }
 
 function topicChips(topics) {
-  if (!topics || topics.length === 0) return null;
   const wrap = document.createElement("div");
-  wrap.className = "topics";
+  wrap.className = topics && topics.length > 0 ? "topics" : "topics topics--empty";
+  if (!topics || topics.length === 0) {
+    wrap.setAttribute("aria-hidden", "true");
+    return wrap;
+  }
   for (const topic of topics.slice(0, 6)) {
     const chip = document.createElement("span");
     chip.className = "topic-chip";
@@ -96,8 +101,11 @@ export function createRepoCard(repo) {
   heading.append(title, badges);
 
   const description = document.createElement("p");
-  description.className = "description";
+  description.className = repo.description ? "description" : "description placeholder";
   description.textContent = repo.description || "No description provided.";
+  if (!repo.description) {
+    description.setAttribute("aria-hidden", "true");
+  }
 
   const metadata = document.createElement("div");
   metadata.className = "repo-meta";
@@ -127,9 +135,7 @@ export function createRepoCard(repo) {
   metadata.append(updated);
 
   article.append(heading, description);
-  const topics = topicChips(repo.topics);
-  if (topics) article.append(topics);
-  article.append(metadata);
+  article.append(topicChips(repo.topics), metadata);
   return article;
 }
 

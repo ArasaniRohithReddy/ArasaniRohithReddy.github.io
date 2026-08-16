@@ -103,6 +103,9 @@ export function createRepoCard(repo) {
   const description = document.createElement("p");
   description.className = repo.description ? "description" : "description placeholder";
   description.textContent = repo.description || "No description provided.";
+  if (!repo.description) {
+    description.setAttribute("aria-hidden", "true");
+  }
 
   const metadata = document.createElement("div");
   metadata.className = "repo-meta";

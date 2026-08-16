@@ -768,10 +768,6 @@ a:focus-visible {
 .repo-grid--list .description,
 .repo-grid--list .topics {
   flex: 2 1 16rem;
-}
-
-.repo-grid--list .description,
-.repo-grid--list .topics {
   min-height: 0;
 }
 
@@ -999,6 +995,10 @@ footer {
   .signin-area {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .signin-area {
+    justify-content: flex-start;
   }
 
   .avatar {

@@ -1,7 +1,12 @@
 "use strict";
 
 import { GitHubApiError, loadAccountData, validateToken } from "./api.js";
-import { createRepoCard, computeStats, computeLanguageBreakdown } from "./render.js";
+import {
+  createRepoCard,
+  createRepoDetail,
+  computeStats,
+  computeLanguageBreakdown,
+} from "./render.js";
 import {
   applyTheme,
   getStoredTheme,
@@ -15,6 +20,9 @@ const TOKEN_ACTIVITY_KEY = "github-repository-dashboard-token-last-activity";
 const INACTIVITY_MS = 60 * 60 * 1000;
 const ACTIVITY_WRITE_INTERVAL_MS = 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 150;
+const BACK_TO_TOP_OFFSET = 400;
+// Natural reading order for each sort; the direction toggle flips it.
+const DEFAULT_SORT_DIRECTION = { updated: "desc", name: "asc", stars: "desc" };
 const PAGE_SIZE = 24;
 const COPY_FEEDBACK_MS = 2000;
 
@@ -45,6 +53,11 @@ const elements = {
   archivedFilter: document.querySelector("#archived-filter"),
   forkFilter: document.querySelector("#fork-filter"),
   sort: document.querySelector("#sort"),
+  sortDirection: document.querySelector("#sort-direction"),
+  sortDirectionLabel: document.querySelector("#sort-direction-label"),
+  toggleFilters: document.querySelector("#toggle-filters"),
+  filterControls: document.querySelector("#filter-controls"),
+  disclosureFilterCount: document.querySelector("#disclosure-filter-count"),
   clearFilters: document.querySelector("#clear-filters"),
   copyViewLink: document.querySelector("#copy-view-link"),
   copyAnnouncer: document.querySelector("#copy-announcer"),
@@ -53,6 +66,18 @@ const elements = {
   languageBar: document.querySelector("#language-bar"),
   languageLegend: document.querySelector("#language-legend"),
   languageSummary: document.querySelector("#language-summary"),
+  languageFallback: document.querySelector("#language-fallback"),
+  languageTooltip: document.querySelector("#language-tooltip"),
+  detailDialog: document.querySelector("#detail-dialog"),
+  detailTitle: document.querySelector("#detail-title"),
+  detailBody: document.querySelector("#detail-body"),
+  closeDetail: document.querySelector("#close-detail"),
+  shortcutsDialog: document.querySelector("#shortcuts-dialog"),
+  openShortcuts: document.querySelector("#open-shortcuts"),
+  closeShortcuts: document.querySelector("#close-shortcuts"),
+  backToTop: document.querySelector("#back-to-top"),
+  emptyFilters: document.querySelector("#empty-filters"),
+  emptyClear: document.querySelector("#empty-clear"),
   activeFilterCount: document.querySelector("#active-filter-count"),
   status: document.querySelector("#status"),
   skeletons: document.querySelector("#skeletons"),
@@ -77,6 +102,7 @@ let debouncedSearchRender = null;
 let tokenDetails = null;
 let inactivityTimer = null;
 let lastActivityWrite = 0;
+let sortDirection = "desc";
 
 function token() {
   return sessionStorage.getItem(TOKEN_KEY) || "";
@@ -204,17 +230,17 @@ function initView(urlParams) {
   const preferred = fromUrl === "list" || fromUrl === "grid" ? fromUrl : getStoredView();
   applyView(preferred);
 
-  const selectView = (view) => {
-    applyView(view);
-    setStoredView(view);
-    syncUrl();
-  };
-
   for (const button of elements.viewButtons) {
-    button.addEventListener("click", () => selectView(button.dataset.view));
+    button.addEventListener("click", () => setView(button.dataset.view));
   }
 
-  initSegmentedGroup(elements.viewButtons, (button) => selectView(button.dataset.view));
+  initSegmentedGroup(elements.viewButtons, (button) => setView(button.dataset.view));
+}
+
+function setView(view) {
+  applyView(view);
+  setStoredView(view);
+  syncUrl();
 }
 
 function applyView(view) {
@@ -346,16 +372,6 @@ function populateLanguageFilter() {
   pendingLanguage = "";
 }
 
-function activeFilterCount() {
-  let count = 0;
-  if (elements.search.value.trim()) count += 1;
-  if (elements.languageFilter.value) count += 1;
-  if (elements.visibilityFilter.value) count += 1;
-  if (elements.archivedFilter.value) count += 1;
-  if (elements.forkFilter.value) count += 1;
-  return count;
-}
-
 // ---------- Featured repositories ----------
 
 function computeFeaturedIds() {
@@ -381,8 +397,31 @@ const URL_PARAMS = {
   arch: () => elements.archivedFilter.value,
   fork: () => elements.forkFilter.value,
   sort: () => (elements.sort.value === "updated" ? "" : elements.sort.value),
+  // Only serialised when it differs from the natural order for this sort.
+  dir: () => (sortDirection === defaultSortDirection() ? "" : sortDirection),
   view: () => (elements.grid.classList.contains("repo-grid--list") ? "list" : ""),
 };
+
+function defaultSortDirection() {
+  return DEFAULT_SORT_DIRECTION[elements.sort.value] || "desc";
+}
+
+function isDefaultOrder() {
+  return elements.sort.value === "updated" && sortDirection === "desc";
+}
+
+function updateSortDirectionControl() {
+  const ascending = sortDirection === "asc";
+  elements.sortDirection.setAttribute("aria-pressed", String(ascending));
+  elements.sortDirection.classList.toggle("is-ascending", ascending);
+  const label = ascending ? "Sort ascending" : "Sort descending";
+  elements.sortDirectionLabel.textContent = label;
+  elements.sortDirection.title = `${label} — activate to reverse the order`;
+  elements.sortDirection.setAttribute(
+    "aria-label",
+    `${label}. Activate to sort ${ascending ? "descending" : "ascending"}.`,
+  );
+}
 
 function syncUrl() {
   const params = new URLSearchParams();
@@ -416,6 +455,9 @@ function applyUrlState() {
   selectValueIfValid(elements.archivedFilter, params.get("arch"));
   selectValueIfValid(elements.forkFilter, params.get("fork"));
   selectValueIfValid(elements.sort, params.get("sort"));
+  const direction = params.get("dir");
+  sortDirection = direction === "asc" || direction === "desc" ? direction : defaultSortDirection();
+  updateSortDirectionControl();
   return params;
 }
 
@@ -440,19 +482,26 @@ function visibleRepositories() {
     return true;
   });
 
+  // The comparators describe the natural ("default direction") order; the
+  // direction toggle reverses the result.
+  const flip = sortDirection === defaultSortDirection() ? 1 : -1;
+  const defaultOrder = isDefaultOrder();
+
   return visible.sort((left, right) => {
+    if (defaultOrder) {
+      // Default ordering only: featured repositories lead, then most recent.
+      const featuredDelta =
+        Number(featuredIds.has(right.id)) - Number(featuredIds.has(left.id));
+      if (featuredDelta !== 0) return featuredDelta;
+    }
     if (elements.sort.value === "name") {
-      return left.name.localeCompare(right.name, undefined, { sensitivity: "base" });
+      return flip * left.name.localeCompare(right.name, undefined, { sensitivity: "base" });
     }
     if (elements.sort.value === "stars") {
-      return right.stargazers_count - left.stargazers_count ||
+      return flip * (right.stargazers_count - left.stargazers_count) ||
         left.name.localeCompare(right.name);
     }
-    // Default ordering only: featured repositories lead, then most recent.
-    const featuredDelta =
-      Number(featuredIds.has(right.id)) - Number(featuredIds.has(left.id));
-    if (featuredDelta !== 0) return featuredDelta;
-    return new Date(right.updated_at) - new Date(left.updated_at);
+    return flip * (new Date(right.updated_at) - new Date(left.updated_at));
   });
 }
 
@@ -464,29 +513,95 @@ function updateStats(visible) {
   elements.statTopLanguage.textContent = stats.topLanguage;
 }
 
+function sliceDescription(slice) {
+  const repos = `${slice.count.toLocaleString()} ${slice.count === 1 ? "repository" : "repositories"}`;
+  const contents = slice.grouped?.length
+    ? ` — includes ${slice.grouped.map((entry) => entry.language).join(", ")}`
+    : "";
+  return `${slice.language} · ${slice.percent.toFixed(1)}% · ${repos}${contents}`;
+}
+
+function hideLanguageTooltip() {
+  elements.languageTooltip.hidden = true;
+}
+
+function showLanguageTooltip(target, slice) {
+  const tooltip = elements.languageTooltip;
+  tooltip.textContent = sliceDescription(slice);
+  tooltip.hidden = false;
+  const wrap = tooltip.parentElement.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  const centre = rect.left - wrap.left + rect.width / 2;
+  const half = tooltip.offsetWidth / 2;
+  const clamped = Math.min(Math.max(centre, half), Math.max(wrap.width - half, half));
+  tooltip.style.left = `${clamped}px`;
+}
+
+function toggleLanguageFilter(language) {
+  if (!language || language === "Other") return;
+  const next = elements.languageFilter.value === language ? "" : language;
+  const allowed = Array.from(elements.languageFilter.options, (option) => option.value);
+  if (!allowed.includes(next)) return;
+  elements.languageFilter.value = next;
+  renderFromFilters();
+}
+
 function renderLanguageBar(visible) {
   const { slices, counted, unknown } = computeLanguageBreakdown(visible);
+  const selected = elements.languageFilter.value;
 
+  // Segments stay presentational so the bar can keep role="img"; the legend
+  // buttons below expose the same information to keyboard and screen readers.
   elements.languageBar.replaceChildren(
     ...slices.map((slice) => {
       const segment = document.createElement("span");
       segment.className = "language-segment";
       segment.style.width = `${slice.percent}%`;
       segment.style.background = slice.color;
+      segment.classList.toggle("is-selected", slice.language === selected);
+      segment.addEventListener("pointerenter", () => showLanguageTooltip(segment, slice));
+      segment.addEventListener("pointerleave", hideLanguageTooltip);
       return segment;
     }),
   );
+  hideLanguageTooltip();
 
   elements.languageLegend.replaceChildren(
     ...slices.map((slice) => {
       const item = document.createElement("li");
-      item.className = "language-legend-item";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "language-legend-item";
+      const isOther = slice.language === "Other";
+      button.disabled = isOther;
+      button.classList.toggle("is-selected", slice.language === selected);
+      button.setAttribute("aria-pressed", String(slice.language === selected));
       const dot = document.createElement("span");
       dot.className = "language-dot";
       dot.style.setProperty("--language-color", slice.color);
       const label = document.createElement("span");
-      label.textContent = `${slice.language} ${slice.percent.toFixed(1)}%`;
-      item.append(dot, label);
+      label.className = "language-legend-label";
+      label.textContent = slice.language;
+      const value = document.createElement("span");
+      value.className = "language-legend-value";
+      value.textContent = `${slice.percent.toFixed(1)}%`;
+      const count = document.createElement("span");
+      count.className = "visually-hidden";
+      count.textContent = `, ${slice.count.toLocaleString()} ${
+        slice.count === 1 ? "repository" : "repositories"
+      }${isOther ? "" : slice.language === selected ? ", filter active" : ", filter by this language"}`;
+      button.append(dot, label, value, count);
+      button.title = sliceDescription(slice);
+      button.addEventListener("click", () => toggleLanguageFilter(slice.language));
+      const segment = elements.languageBar.children[slices.indexOf(slice)];
+      const show = () => {
+        if (segment) showLanguageTooltip(segment, slice);
+      };
+      button.addEventListener("focus", show);
+      button.addEventListener("pointerenter", show);
+      button.addEventListener("blur", hideLanguageTooltip);
+      button.addEventListener("pointerleave", hideLanguageTooltip);
+      item.append(button);
       return item;
     }),
   );
@@ -502,12 +617,77 @@ function renderLanguageBar(visible) {
   );
   elements.languageBar.classList.toggle("language-bar--empty", slices.length === 0);
 
-  // Text fallback: conveys the same information without the bar or legend.
+  // Concise caption plus a screen-reader-only text fallback for the bar.
   elements.languageSummary.textContent = slices.length
-    ? `${description}. Based on ${counted.toLocaleString()} of ${visible.length.toLocaleString()} repositories shown${
+    ? `Based on ${counted.toLocaleString()} of ${visible.length.toLocaleString()} repositories${
         unknown ? ` (${unknown.toLocaleString()} without a detected language)` : ""
-      }.`
+      }`
     : "No language data available for the repositories currently shown.";
+  elements.languageFallback.textContent = slices.length ? `${description}.` : "";
+}
+
+function describeActiveFilters() {
+  const active = [];
+  if (elements.search.value.trim()) {
+    active.push({ key: "search", label: `Search: “${elements.search.value.trim()}”` });
+  }
+  if (elements.languageFilter.value) {
+    active.push({ key: "language", label: `Language: ${elements.languageFilter.value}` });
+  }
+  if (elements.visibilityFilter.value) {
+    active.push({ key: "visibility", label: `Visibility: ${elements.visibilityFilter.value}` });
+  }
+  if (elements.archivedFilter.value) {
+    active.push({
+      key: "archived",
+      label: elements.archivedFilter.value === "hide" ? "Archived: hidden" : "Archived: only",
+    });
+  }
+  if (elements.forkFilter.value) {
+    active.push({
+      key: "fork",
+      label: elements.forkFilter.value === "hide" ? "Forks: hidden" : "Forks: only",
+    });
+  }
+  return active;
+}
+
+function clearSingleFilter(key) {
+  if (key === "search") {
+    debouncedSearchRender?.cancel();
+    elements.search.value = "";
+  } else if (key === "language") {
+    elements.languageFilter.value = "";
+  } else if (key === "visibility") {
+    elements.visibilityFilter.value = "";
+  } else if (key === "archived") {
+    elements.archivedFilter.value = "";
+  } else if (key === "fork") {
+    elements.forkFilter.value = "";
+  }
+  renderFromFilters();
+}
+
+function renderEmptyState(active) {
+  elements.emptyFilters.replaceChildren(
+    ...active.map((filter) => {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary filter-chip";
+      button.textContent = filter.label;
+      button.setAttribute("aria-label", `Remove filter ${filter.label}`);
+      const remove = document.createElement("span");
+      remove.className = "filter-chip-remove";
+      remove.setAttribute("aria-hidden", "true");
+      remove.textContent = "×";
+      button.append(remove);
+      button.addEventListener("click", () => clearSingleFilter(filter.key));
+      item.append(button);
+      return item;
+    }),
+  );
+  elements.emptyClear.hidden = active.length === 0;
 }
 
 function renderRepositories() {
@@ -531,9 +711,12 @@ function renderRepositories() {
       }`
     : "";
 
-  const filterCount = activeFilterCount();
+  const activeFilters = describeActiveFilters();
+  const filterCount = activeFilters.length;
   elements.clearFilters.hidden = filterCount === 0;
   elements.activeFilterCount.textContent = filterCount ? ` (${filterCount})` : "";
+  elements.disclosureFilterCount.textContent = filterCount ? ` (${filterCount})` : "";
+  renderEmptyState(activeFilters);
 
   updateStats(visible);
   renderLanguageBar(visible);
@@ -730,9 +913,153 @@ function initFilters() {
   elements.visibilityFilter.addEventListener("change", renderFromFilters);
   elements.archivedFilter.addEventListener("change", renderFromFilters);
   elements.forkFilter.addEventListener("change", renderFromFilters);
-  elements.sort.addEventListener("change", renderFromFilters);
+  elements.sort.addEventListener("change", () => {
+    // Each sort starts in its natural order; the toggle then reverses it.
+    sortDirection = defaultSortDirection();
+    updateSortDirectionControl();
+    renderFromFilters();
+  });
+  elements.sortDirection.addEventListener("click", () => {
+    sortDirection = sortDirection === "asc" ? "desc" : "asc";
+    updateSortDirectionControl();
+    renderFromFilters();
+  });
   elements.clearFilters.addEventListener("click", clearFilters);
+  elements.emptyClear.addEventListener("click", clearFilters);
   elements.showMore.addEventListener("click", showMoreRepositories);
+}
+
+// ---------- Repository detail dialog ----------
+
+let lastFocusedBeforeDetail = null;
+
+function openDetailDialog(repoId) {
+  const repo = repositories.find((item) => String(item.id) === String(repoId));
+  if (!repo) return;
+  lastFocusedBeforeDetail = document.activeElement;
+  elements.detailTitle.textContent = repo.name;
+  elements.detailBody.replaceChildren(createRepoDetail(repo));
+  elements.detailDialog.showModal();
+  elements.closeDetail.focus();
+}
+
+function closeDetailDialog() {
+  elements.detailDialog.close();
+  if (lastFocusedBeforeDetail instanceof HTMLElement) {
+    lastFocusedBeforeDetail.focus();
+  }
+}
+
+function initDetailDialog() {
+  elements.closeDetail.addEventListener("click", closeDetailDialog);
+  elements.detailDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDetailDialog();
+  });
+  elements.detailDialog.addEventListener("click", (event) => {
+    if (event.target === elements.detailDialog) {
+      closeDetailDialog();
+    }
+  });
+  elements.detailBody.addEventListener("click", (event) => {
+    const button = event.target instanceof Element
+      ? event.target.closest(".copy-clone")
+      : null;
+    if (button) {
+      handleCopyClone(button);
+    }
+  });
+
+  const openFromEvent = (event) => {
+    if (!(event.target instanceof Element)) return null;
+    // Links and buttons inside the card keep their own behaviour.
+    if (event.target.closest("a, button")) return null;
+    return event.target.closest(".repo-card");
+  };
+
+  elements.grid.addEventListener("click", (event) => {
+    const card = openFromEvent(event);
+    if (card) {
+      openDetailDialog(card.dataset.repoId);
+    }
+  });
+
+  elements.grid.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || !target.classList.contains("repo-card")) return;
+    event.preventDefault();
+    openDetailDialog(target.dataset.repoId);
+  });
+}
+
+// ---------- Shortcuts dialog ----------
+
+let lastFocusedBeforeShortcuts = null;
+
+function openShortcutsDialog() {
+  if (elements.shortcutsDialog.open) return;
+  lastFocusedBeforeShortcuts = document.activeElement;
+  elements.shortcutsDialog.showModal();
+  elements.closeShortcuts.focus();
+}
+
+function closeShortcutsDialog() {
+  elements.shortcutsDialog.close();
+  if (lastFocusedBeforeShortcuts instanceof HTMLElement) {
+    lastFocusedBeforeShortcuts.focus();
+  }
+}
+
+function initShortcutsDialog() {
+  elements.openShortcuts.addEventListener("click", openShortcutsDialog);
+  elements.closeShortcuts.addEventListener("click", closeShortcutsDialog);
+  elements.shortcutsDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeShortcutsDialog();
+  });
+  elements.shortcutsDialog.addEventListener("click", (event) => {
+    if (event.target === elements.shortcutsDialog) {
+      closeShortcutsDialog();
+    }
+  });
+}
+
+// ---------- Back to top ----------
+
+function initBackToTop() {
+  const update = () => {
+    elements.backToTop.hidden = window.scrollY < BACK_TO_TOP_OFFSET;
+  };
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+
+  elements.backToTop.addEventListener("click", () => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    document.querySelector(".skip-link")?.focus();
+  });
+}
+
+// ---------- Filters disclosure ----------
+
+function initFilterDisclosure() {
+  const compact = window.matchMedia("(max-width: 720px)");
+  const apply = () => {
+    // The disclosure only exists on narrow viewports; wider layouts always
+    // show the filter row.
+    const expanded = !compact.matches;
+    elements.toggleFilters.setAttribute("aria-expanded", String(expanded));
+    elements.filterControls.classList.toggle("is-collapsed", !expanded);
+  };
+  apply();
+  compact.addEventListener("change", apply);
+
+  elements.toggleFilters.addEventListener("click", () => {
+    const expanded = elements.toggleFilters.getAttribute("aria-expanded") === "true";
+    elements.toggleFilters.setAttribute("aria-expanded", String(!expanded));
+    elements.filterControls.classList.toggle("is-collapsed", expanded);
+  });
 }
 
 function initKeyboardShortcuts() {
@@ -741,14 +1068,22 @@ function initKeyboardShortcuts() {
     const isTyping =
       target instanceof HTMLElement &&
       (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA");
+    const inDialog =
+      target instanceof HTMLElement && Boolean(target.closest("dialog[open]"));
 
-    if (event.key === "/" && !isTyping) {
+    if (event.key === "/" && !isTyping && !inDialog) {
       event.preventDefault();
       elements.search.focus();
     } else if (event.key === "Escape" && target === elements.search) {
       debouncedSearchRender?.cancel();
       elements.search.value = "";
       renderFromFilters();
+    } else if (event.key === "?" && !isTyping && !inDialog) {
+      event.preventDefault();
+      openShortcutsDialog();
+    } else if ((event.key === "g" || event.key === "l") && !isTyping && !inDialog) {
+      event.preventDefault();
+      setView(event.key === "g" ? "grid" : "list");
     }
   });
 }
@@ -797,6 +1132,10 @@ async function init() {
   initTokenForm();
   initFilters();
   initCopyControls();
+  initDetailDialog();
+  initShortcutsDialog();
+  initBackToTop();
+  initFilterDisclosure();
   initKeyboardShortcuts();
   elements.retry.addEventListener("click", loadRepositories);
   for (const eventName of ["pointerdown", "keydown", "scroll"]) {

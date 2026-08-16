@@ -73,9 +73,28 @@ function topicChips(topics) {
   return wrap;
 }
 
-export function createRepoCard(repo) {
+function copyCloneButton(repo) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-clone icon-button";
+  button.dataset.cloneUrl = repo.clone_url || "";
+  button.dataset.repoName = repo.name;
+  button.setAttribute("aria-label", `Copy clone URL for ${repo.name}`);
+  button.title = `Copy clone URL for ${repo.name}`;
+  button.append(icon("copy"), icon("check"));
+  const feedback = document.createElement("span");
+  feedback.className = "copy-clone-feedback";
+  feedback.setAttribute("aria-hidden", "true");
+  feedback.textContent = "Copied!";
+  button.append(feedback);
+  return button;
+}
+
+export function createRepoCard(repo, { featured = false } = {}) {
   const article = document.createElement("article");
-  article.className = `repo-card${repo.private ? " private" : ""}`;
+  article.className = `repo-card${repo.private ? " private" : ""}${
+    featured ? " repo-card--featured" : ""
+  }`;
 
   const heading = document.createElement("div");
   heading.className = "card-heading";
@@ -89,6 +108,11 @@ export function createRepoCard(repo) {
 
   const badges = document.createElement("div");
   badges.className = "badges";
+  if (featured) {
+    const featuredBadge = badge("Featured", "featured");
+    featuredBadge.prepend(icon("sparkle"));
+    badges.append(featuredBadge);
+  }
   const visibilityBadge = badge(repo.private ? "Private" : "Public", repo.private ? "private" : "");
   visibilityBadge.prepend(icon(repo.private ? "lock" : "globe"));
   badges.append(visibilityBadge);
@@ -98,7 +122,13 @@ export function createRepoCard(repo) {
     archivedBadge.prepend(icon("archive"));
     badges.append(archivedBadge);
   }
-  heading.append(title, badges);
+  const headingSide = document.createElement("div");
+  headingSide.className = "card-heading-side";
+  headingSide.append(badges);
+  if (repo.clone_url) {
+    headingSide.append(copyCloneButton(repo));
+  }
+  heading.append(title, headingSide);
 
   const description = document.createElement("p");
   description.className = repo.description ? "description" : "description placeholder";
@@ -161,4 +191,41 @@ export function computeStats(repositories) {
     languageCount: languageCounts.size,
     topLanguage,
   };
+}
+
+/**
+ * Language distribution across the supplied repositories, derived from the
+ * already-fetched `repo.language` field. Never issues extra API requests.
+ */
+export function computeLanguageBreakdown(repositories, maxSlices = 6) {
+  const counts = new Map();
+  let counted = 0;
+  for (const repo of repositories) {
+    if (!repo.language) continue;
+    counts.set(repo.language, (counts.get(repo.language) || 0) + 1);
+    counted += 1;
+  }
+
+  const sorted = [...counts.entries()].sort(
+    (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+  );
+
+  const slices = sorted.slice(0, maxSlices).map(([language, count]) => ({
+    language,
+    count,
+    percent: (count / counted) * 100,
+    color: languageColor(language),
+  }));
+
+  const remainder = sorted.slice(maxSlices).reduce((sum, [, count]) => sum + count, 0);
+  if (remainder > 0) {
+    slices.push({
+      language: "Other",
+      count: remainder,
+      percent: (remainder / counted) * 100,
+      color: "var(--muted)",
+    });
+  }
+
+  return { slices, counted, unknown: repositories.length - counted };
 }

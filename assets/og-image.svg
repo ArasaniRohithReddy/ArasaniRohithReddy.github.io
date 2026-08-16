@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="ArasaniRohithReddy · Repositories — a GitHub repository dashboard.">
+  <title>ArasaniRohithReddy · Repositories</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.12" r="0.55">
+      <stop offset="0" stop-color="#1f6feb" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#1f6feb" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.08" cy="0.95" r="0.5">
+      <stop offset="0" stop-color="#8250df" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#8250df" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <text x="90" y="196" fill="#58a6ff" font-size="24" font-weight="700" letter-spacing="5">GITHUB REPOSITORY DASHBOARD</text>
+    <text x="90" y="290" fill="#f0f6fc" font-size="62" font-weight="700">ArasaniRohithReddy</text>
+    <text x="90" y="360" fill="#cdd7e2" font-size="50" font-weight="700">Repositories</text>
+    <text x="90" y="440" fill="#9da7b3" font-size="28">Search, filter and share every repository —</text>
+    <text x="90" y="478" fill="#9da7b3" font-size="28">access enforced by GitHub.</text>
+    <text x="90" y="570" fill="#9da7b3" font-size="28" font-weight="600">arasanirohithreddy.github.io</text>
+  </g>
+
+  <g transform="translate(90 505)">
+    <rect width="120" height="12" rx="6" fill="#f1e05a"/>
+    <rect x="132" width="90" height="12" rx="6" fill="#3178c6"/>
+    <rect x="234" width="70" height="12" rx="6" fill="#b07219"/>
+    <rect x="316" width="50" height="12" rx="6" fill="#3572A5"/>
+  </g>
+
+  <g transform="translate(900 210)" fill="none" stroke="#58a6ff" stroke-width="6" opacity="0.85">
+    <rect x="0" y="0" width="100" height="100" rx="20"/>
+    <rect x="140" y="0" width="100" height="100" rx="20"/>
+    <rect x="0" y="140" width="100" height="100" rx="20"/>
+    <rect x="140" y="140" width="100" height="100" rx="20"/>
+  </g>
+</svg>

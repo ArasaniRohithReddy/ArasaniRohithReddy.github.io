@@ -1,7 +1,7 @@
 "use strict";
 
 import { GitHubApiError, loadAccountData, validateToken } from "./api.js";
-import { createRepoCard, computeStats } from "./render.js";
+import { createRepoCard, computeStats, computeLanguageBreakdown } from "./render.js";
 import {
   applyTheme,
   getStoredTheme,
@@ -15,6 +15,14 @@ const TOKEN_ACTIVITY_KEY = "github-repository-dashboard-token-last-activity";
 const INACTIVITY_MS = 60 * 60 * 1000;
 const ACTIVITY_WRITE_INTERVAL_MS = 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 150;
+const PAGE_SIZE = 24;
+const COPY_FEEDBACK_MS = 2000;
+
+// Optional curated allow-list of repository names to surface first. Left empty
+// by default: when no name matches, the most-starred repositories are featured
+// instead, so no repository data is hard-coded.
+const FEATURED_REPO_NAMES = [];
+const FEATURED_FALLBACK_COUNT = 3;
 
 const elements = {
   avatar: document.querySelector("#avatar"),
@@ -34,8 +42,17 @@ const elements = {
   search: document.querySelector("#search"),
   languageFilter: document.querySelector("#language-filter"),
   visibilityFilter: document.querySelector("#visibility-filter"),
+  archivedFilter: document.querySelector("#archived-filter"),
+  forkFilter: document.querySelector("#fork-filter"),
   sort: document.querySelector("#sort"),
   clearFilters: document.querySelector("#clear-filters"),
+  copyViewLink: document.querySelector("#copy-view-link"),
+  copyAnnouncer: document.querySelector("#copy-announcer"),
+  showMore: document.querySelector("#show-more"),
+  signinArea: document.querySelector(".signin-area"),
+  languageBar: document.querySelector("#language-bar"),
+  languageLegend: document.querySelector("#language-legend"),
+  languageSummary: document.querySelector("#language-summary"),
   activeFilterCount: document.querySelector("#active-filter-count"),
   status: document.querySelector("#status"),
   skeletons: document.querySelector("#skeletons"),
@@ -52,6 +69,10 @@ const elements = {
 };
 
 let repositories = [];
+let featuredIds = new Set();
+let visibleLimit = PAGE_SIZE;
+// Language requested by the URL before the option list has been populated.
+let pendingLanguage = "";
 let debouncedSearchRender = null;
 let tokenDetails = null;
 let inactivityTimer = null;
@@ -177,21 +198,23 @@ function updateThemeButtons(theme) {
 
 // ---------- View mode (grid / list) ----------
 
-function initView() {
-  const preferred = getStoredView();
+function initView(urlParams) {
+  // URL parameter wins, then the stored preference.
+  const fromUrl = urlParams?.get("view");
+  const preferred = fromUrl === "list" || fromUrl === "grid" ? fromUrl : getStoredView();
   applyView(preferred);
 
+  const selectView = (view) => {
+    applyView(view);
+    setStoredView(view);
+    syncUrl();
+  };
+
   for (const button of elements.viewButtons) {
-    button.addEventListener("click", () => {
-      applyView(button.dataset.view);
-      setStoredView(button.dataset.view);
-    });
+    button.addEventListener("click", () => selectView(button.dataset.view));
   }
 
-  initSegmentedGroup(elements.viewButtons, (button) => {
-    applyView(button.dataset.view);
-    setStoredView(button.dataset.view);
-  });
+  initSegmentedGroup(elements.viewButtons, (button) => selectView(button.dataset.view));
 }
 
 function applyView(view) {
@@ -242,6 +265,8 @@ function initSigninDialog() {
 
 function updateSigninControls() {
   const signedIn = Boolean(token());
+  // Signed out the area holds a lone button, so drop the grouped-card chrome.
+  elements.signinArea.classList.toggle("is-signed-out", !signedIn);
   elements.signOut.hidden = !signedIn;
   elements.openSignin.textContent = signedIn ? "Update token" : "Sign in";
   elements.openSignin.classList.toggle("secondary", signedIn);
@@ -314,9 +339,11 @@ function populateLanguageFilter() {
       Object.assign(document.createElement("option"), { value: language, textContent: language }),
     ),
   );
-  if (languages.includes(current)) {
-    elements.languageFilter.value = current;
+  const requested = current || pendingLanguage;
+  if (languages.includes(requested)) {
+    elements.languageFilter.value = requested;
   }
+  pendingLanguage = "";
 }
 
 function activeFilterCount() {
@@ -324,7 +351,72 @@ function activeFilterCount() {
   if (elements.search.value.trim()) count += 1;
   if (elements.languageFilter.value) count += 1;
   if (elements.visibilityFilter.value) count += 1;
+  if (elements.archivedFilter.value) count += 1;
+  if (elements.forkFilter.value) count += 1;
   return count;
+}
+
+// ---------- Featured repositories ----------
+
+function computeFeaturedIds() {
+  const allowList = new Set(FEATURED_REPO_NAMES.map((name) => name.toLocaleLowerCase()));
+  const curated = repositories.filter((repo) => allowList.has(repo.name.toLocaleLowerCase()));
+  if (curated.length > 0) {
+    return new Set(curated.map((repo) => repo.id));
+  }
+
+  const starred = repositories
+    .filter((repo) => repo.stargazers_count > 0)
+    .sort((left, right) => right.stargazers_count - left.stargazers_count)
+    .slice(0, FEATURED_FALLBACK_COUNT);
+  return new Set(starred.map((repo) => repo.id));
+}
+
+// ---------- URL state ----------
+
+const URL_PARAMS = {
+  q: () => elements.search.value.trim(),
+  lang: () => elements.languageFilter.value || pendingLanguage,
+  vis: () => elements.visibilityFilter.value,
+  arch: () => elements.archivedFilter.value,
+  fork: () => elements.forkFilter.value,
+  sort: () => (elements.sort.value === "updated" ? "" : elements.sort.value),
+  view: () => (elements.grid.classList.contains("repo-grid--list") ? "list" : ""),
+};
+
+function syncUrl() {
+  const params = new URLSearchParams();
+  for (const [key, read] of Object.entries(URL_PARAMS)) {
+    const value = read();
+    if (value) {
+      params.set(key, value);
+    }
+  }
+  const query = params.toString();
+  const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+  // replaceState keeps filtering out of the browser history stack.
+  window.history.replaceState(null, "", url);
+}
+
+function selectValueIfValid(select, value) {
+  if (!value) return;
+  const allowed = Array.from(select.options, (option) => option.value);
+  if (allowed.includes(value)) {
+    select.value = value;
+  }
+}
+
+function applyUrlState() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("q")) {
+    elements.search.value = params.get("q");
+  }
+  pendingLanguage = params.get("lang") || "";
+  selectValueIfValid(elements.visibilityFilter, params.get("vis"));
+  selectValueIfValid(elements.archivedFilter, params.get("arch"));
+  selectValueIfValid(elements.forkFilter, params.get("fork"));
+  selectValueIfValid(elements.sort, params.get("sort"));
+  return params;
 }
 
 function visibleRepositories() {
@@ -332,12 +424,19 @@ function visibleRepositories() {
   const language = elements.languageFilter.value;
   const visibility = elements.visibilityFilter.value;
 
+  const archived = elements.archivedFilter.value;
+  const forks = elements.forkFilter.value;
+
   const visible = repositories.filter((repo) => {
     const searchable = `${repo.name} ${repo.description || ""}`.toLocaleLowerCase();
     if (query && !searchable.includes(query)) return false;
     if (language && repo.language !== language) return false;
     if (visibility === "public" && repo.private) return false;
     if (visibility === "private" && !repo.private) return false;
+    if (archived === "hide" && repo.archived) return false;
+    if (archived === "only" && !repo.archived) return false;
+    if (forks === "hide" && repo.fork) return false;
+    if (forks === "only" && !repo.fork) return false;
     return true;
   });
 
@@ -349,6 +448,10 @@ function visibleRepositories() {
       return right.stargazers_count - left.stargazers_count ||
         left.name.localeCompare(right.name);
     }
+    // Default ordering only: featured repositories lead, then most recent.
+    const featuredDelta =
+      Number(featuredIds.has(right.id)) - Number(featuredIds.has(left.id));
+    if (featuredDelta !== 0) return featuredDelta;
     return new Date(right.updated_at) - new Date(left.updated_at);
   });
 }
@@ -361,13 +464,71 @@ function updateStats(visible) {
   elements.statTopLanguage.textContent = stats.topLanguage;
 }
 
+function renderLanguageBar(visible) {
+  const { slices, counted, unknown } = computeLanguageBreakdown(visible);
+
+  elements.languageBar.replaceChildren(
+    ...slices.map((slice) => {
+      const segment = document.createElement("span");
+      segment.className = "language-segment";
+      segment.style.width = `${slice.percent}%`;
+      segment.style.background = slice.color;
+      return segment;
+    }),
+  );
+
+  elements.languageLegend.replaceChildren(
+    ...slices.map((slice) => {
+      const item = document.createElement("li");
+      item.className = "language-legend-item";
+      const dot = document.createElement("span");
+      dot.className = "language-dot";
+      dot.style.setProperty("--language-color", slice.color);
+      const label = document.createElement("span");
+      label.textContent = `${slice.language} ${slice.percent.toFixed(1)}%`;
+      item.append(dot, label);
+      return item;
+    }),
+  );
+
+  const description = slices
+    .map((slice) => `${slice.language} ${slice.percent.toFixed(1)}%`)
+    .join(", ");
+  elements.languageBar.setAttribute(
+    "aria-label",
+    slices.length
+      ? `Language distribution across the repositories currently shown: ${description}.`
+      : "No language data available for the repositories currently shown.",
+  );
+  elements.languageBar.classList.toggle("language-bar--empty", slices.length === 0);
+
+  // Text fallback: conveys the same information without the bar or legend.
+  elements.languageSummary.textContent = slices.length
+    ? `${description}. Based on ${counted.toLocaleString()} of ${visible.length.toLocaleString()} repositories shown${
+        unknown ? ` (${unknown.toLocaleString()} without a detected language)` : ""
+      }.`
+    : "No language data available for the repositories currently shown.";
+}
+
 function renderRepositories() {
   const visible = visibleRepositories();
-  elements.grid.replaceChildren(...visible.map(createRepoCard));
+  const rendered = visible.slice(0, visibleLimit);
+  elements.grid.replaceChildren(
+    ...rendered.map((repo) => createRepoCard(repo, { featured: featuredIds.has(repo.id) })),
+  );
   elements.grid.setAttribute("aria-busy", "false");
   elements.empty.hidden = visible.length !== 0 || repositories.length === 0;
+
+  const remaining = visible.length - rendered.length;
+  elements.showMore.hidden = remaining <= 0;
+  if (remaining > 0) {
+    elements.showMore.textContent = `Show more repositories (${remaining.toLocaleString()} remaining)`;
+  }
+
   elements.resultCount.textContent = repositories.length
-    ? `Showing ${visible.length.toLocaleString()} of ${repositories.length.toLocaleString()} repositories`
+    ? `Showing ${visible.length.toLocaleString()} of ${repositories.length.toLocaleString()} repositories${
+        remaining > 0 ? ` · ${rendered.length.toLocaleString()} rendered so far` : ""
+      }`
     : "";
 
   const filterCount = activeFilterCount();
@@ -375,6 +536,21 @@ function renderRepositories() {
   elements.activeFilterCount.textContent = filterCount ? ` (${filterCount})` : "";
 
   updateStats(visible);
+  renderLanguageBar(visible);
+  syncUrl();
+}
+
+function renderFromFilters() {
+  visibleLimit = PAGE_SIZE;
+  renderRepositories();
+}
+
+function showMoreRepositories() {
+  visibleLimit += PAGE_SIZE;
+  renderRepositories();
+  const cards = elements.grid.querySelectorAll(".repo-card");
+  const nextCard = cards[Math.max(0, visibleLimit - PAGE_SIZE)];
+  nextCard?.querySelector("a")?.focus();
 }
 
 function clearFilters() {
@@ -382,7 +558,73 @@ function clearFilters() {
   elements.search.value = "";
   elements.languageFilter.value = "";
   elements.visibilityFilter.value = "";
-  renderRepositories();
+  elements.archivedFilter.value = "";
+  elements.forkFilter.value = "";
+  renderFromFilters();
+}
+
+// ---------- Clipboard ----------
+
+function announceCopy(message) {
+  elements.copyAnnouncer.textContent = message;
+}
+
+async function copyText(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    // Fallback for browsers without the async Clipboard API or permission.
+    const area = document.createElement("textarea");
+    area.value = value;
+    area.setAttribute("readonly", "");
+    area.className = "visually-hidden";
+    document.body.append(area);
+    area.select();
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    area.remove();
+    return copied;
+  }
+}
+
+async function handleCopyClone(button) {
+  const cloneUrl = button.dataset.cloneUrl;
+  if (!cloneUrl) return;
+  const copied = await copyText(cloneUrl);
+  button.classList.toggle("is-copied", copied);
+  announceCopy(
+    copied
+      ? `Clone URL for ${button.dataset.repoName} copied to clipboard.`
+      : `Could not copy the clone URL for ${button.dataset.repoName}.`,
+  );
+  if (copied) {
+    setTimeout(() => button.classList.remove("is-copied"), COPY_FEEDBACK_MS);
+  }
+}
+
+function initCopyControls() {
+  elements.grid.addEventListener("click", (event) => {
+    const button = event.target instanceof Element
+      ? event.target.closest(".copy-clone")
+      : null;
+    if (button) {
+      handleCopyClone(button);
+    }
+  });
+
+  elements.copyViewLink.addEventListener("click", async () => {
+    const copied = await copyText(window.location.href);
+    elements.copyViewLink.classList.toggle("is-copied", copied);
+    announceCopy(copied ? "Link to this view copied to clipboard." : "Could not copy the link.");
+    if (copied) {
+      setTimeout(() => elements.copyViewLink.classList.remove("is-copied"), COPY_FEEDBACK_MS);
+    }
+  });
 }
 
 function debounce(fn, delay) {
@@ -455,9 +697,10 @@ async function loadRepositories() {
     );
     displayProfile(profile);
     repositories = loaded;
+    featuredIds = computeFeaturedIds();
     hideSkeletons();
     populateLanguageFilter();
-    renderRepositories();
+    renderFromFilters();
 
     if (privateFetchError) {
       // Public repositories loaded fine; only the private-repo lookup with
@@ -470,9 +713,10 @@ async function loadRepositories() {
     }
   } catch (error) {
     repositories = [];
+    featuredIds = new Set();
     hideSkeletons();
     populateLanguageFilter();
-    renderRepositories();
+    renderFromFilters();
     showError(error, Boolean(accessToken));
   }
 }
@@ -480,12 +724,15 @@ async function loadRepositories() {
 // ---------- Wiring ----------
 
 function initFilters() {
-  debouncedSearchRender = debounce(renderRepositories, SEARCH_DEBOUNCE_MS);
+  debouncedSearchRender = debounce(renderFromFilters, SEARCH_DEBOUNCE_MS);
   elements.search.addEventListener("input", debouncedSearchRender);
-  elements.languageFilter.addEventListener("change", renderRepositories);
-  elements.visibilityFilter.addEventListener("change", renderRepositories);
-  elements.sort.addEventListener("change", renderRepositories);
+  elements.languageFilter.addEventListener("change", renderFromFilters);
+  elements.visibilityFilter.addEventListener("change", renderFromFilters);
+  elements.archivedFilter.addEventListener("change", renderFromFilters);
+  elements.forkFilter.addEventListener("change", renderFromFilters);
+  elements.sort.addEventListener("change", renderFromFilters);
   elements.clearFilters.addEventListener("click", clearFilters);
+  elements.showMore.addEventListener("click", showMoreRepositories);
 }
 
 function initKeyboardShortcuts() {
@@ -501,7 +748,7 @@ function initKeyboardShortcuts() {
     } else if (event.key === "Escape" && target === elements.search) {
       debouncedSearchRender?.cancel();
       elements.search.value = "";
-      renderRepositories();
+      renderFromFilters();
     }
   });
 }
@@ -543,11 +790,13 @@ function initTokenForm() {
 }
 
 async function init() {
+  const urlParams = applyUrlState();
   initTheme();
-  initView();
+  initView(urlParams);
   initSigninDialog();
   initTokenForm();
   initFilters();
+  initCopyControls();
   initKeyboardShortcuts();
   elements.retry.addEventListener("click", loadRepositories);
   for (const eventName of ["pointerdown", "keydown", "scroll"]) {

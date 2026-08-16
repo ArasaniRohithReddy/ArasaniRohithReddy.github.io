@@ -18,12 +18,16 @@ The workflow publishes the repository root, where `index.html` is located.
 
 - **Search, filter and sort:** the filter bar lets you search by name/description,
   filter by language, visibility (All / Public / Private), archived state and
-  forks, and sort by recently updated, name, or star count. Filters compose
+  forks, and sort by recently updated, name, or star count. Every sort can be
+  reversed with the **sort direction** toggle beside it. Filters compose
   together, and a result count ("Showing 12 of 24 repositories") plus an
   active-filter count is shown. Use **Clear filters** to reset everything at once.
+  The toolbar is two rows — a full-width search field, then the filter controls
+  with their actions — collapsing behind a **Filters** disclosure on narrow
+  screens.
 - **Shareable views:** the current search, language, visibility, archived, fork,
-  sort and view selections are mirrored in the URL query string
-  (`?q=…&lang=…&vis=…&arch=…&fork=…&sort=…&view=…`) with `history.replaceState`,
+  sort, sort direction and view selections are mirrored in the URL query string
+  (`?q=…&lang=…&vis=…&arch=…&fork=…&sort=…&dir=…&view=…`) with `history.replaceState`,
   so a link reproduces the same view. Parameters at their default value are
   omitted. **Copy link to this view** copies the current URL. When a parameter is
   absent, the stored `localStorage` preference is used instead.
@@ -32,16 +36,32 @@ The workflow publishes the repository root, where `index.html` is located.
   curated allow-list of names (`FEATURED_REPO_NAMES` in `assets/js/main.js`) takes
   precedence; otherwise the most-starred repositories are used. Choosing **Name**
   or **Most stars** overrides the featured ordering.
-- **Language breakdown:** a stacked bar with an accessible legend shows the
-  language distribution of the repositories currently shown, recomputed whenever
-  filters change. It is derived from the repository data already fetched, so it
-  costs no extra API requests.
+- **Language breakdown:** a stacked bar shows the language distribution of the
+  repositories currently shown, recomputed whenever filters change. Hovering a
+  segment or a legend entry reveals the language, percentage and repository
+  count; selecting a legend entry filters to that language (and updates the URL),
+  and selecting it again clears the filter. Very small slices are grouped into
+  **Other**, whose tooltip lists what it contains. The bar keeps `role="img"`
+  with a descriptive label plus a screen-reader text fallback, and is derived
+  from the repository data already fetched, so it costs no extra API requests.
+- **Repository details:** selecting a card (or its details button) opens a dialog
+  with the full description, all topics, language, stars, forks, watchers, open
+  issues, licence, default branch, size, created/updated/pushed dates, homepage
+  and clone URL. Everything comes from the data already fetched — no extra API
+  requests — and the dialog is fully keyboard operable with `Escape` to close.
 - **Copy clone URL:** each repository card has a copy button for its HTTPS clone
   URL, with visual and screen-reader confirmation.
 - **Progressive rendering:** the first 24 repositories render immediately and
   **Show more repositories** reveals the rest, so large accounts stay responsive.
-- **Keyboard shortcuts:** press `/` anywhere on the page to focus the search box,
-  and `Escape` while the search box is focused clears it.
+- **Keyboard shortcuts:** `/` focuses the search box, `Escape` clears it (or
+  closes a dialog), `g` switches to grid view, `l` to list view, and `?` opens
+  the shortcuts help dialog, also reachable from the **Shortcuts** button.
+- **Back to top:** a button appears once you scroll down, honouring
+  `prefers-reduced-motion`.
+- **Empty state:** when filters match nothing, each active filter is listed as a
+  chip that can be removed individually, alongside a clear-all action.
+- **Printing:** a print stylesheet hides the controls, expands the cards and
+  prints black on white.
 - **Grid / list view:** toggle between a card grid and a compact list using the
   view switch above the repository list. Your choice is remembered
   (`localStorage`) across visits.

@@ -102,15 +102,23 @@ function copyCloneButton(repo) {
   return button;
 }
 
+function detailButton(repo) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "detail-open icon-button";
+  button.dataset.repoId = String(repo.id);
+  button.setAttribute("aria-label", `View details for ${repo.name}`);
+  button.title = `View details for ${repo.name}`;
+  button.append(icon("eye"));
+  return button;
+}
+
 export function createRepoCard(repo, { featured = false } = {}) {
   const article = document.createElement("article");
   article.className = `repo-card${repo.private ? " private" : ""}${
     featured ? " repo-card--featured" : ""
   }`;
   article.dataset.repoId = String(repo.id);
-  article.tabIndex = 0;
-  article.setAttribute("role", "button");
-  article.setAttribute("aria-label", `${repo.name} — open details`);
 
   // Zone 1: header — title, badges and the copy button, at a fixed height so
   // every card in a row lines up regardless of how long the repo name is.
@@ -142,13 +150,15 @@ export function createRepoCard(repo, { featured = false } = {}) {
     archivedBadge.prepend(icon("archive"));
     badges.append(archivedBadge);
   }
-  // Title and the copy button share the first header row; badges always get
+  // Title and the card actions share the first header row; badges always get
   // their own row, so a long name can never push them out of place.
-  heading.append(title);
+  const actions = document.createElement("div");
+  actions.className = "card-header-actions";
+  actions.append(detailButton(repo));
   if (repo.clone_url) {
-    heading.append(copyCloneButton(repo));
+    actions.append(copyCloneButton(repo));
   }
-  heading.append(badges);
+  heading.append(title, actions, badges);
 
   // Zone 2: body — description clamped to a fixed number of lines, then a
   // single clamped row of topic chips.

@@ -1098,15 +1098,9 @@ a:focus-visible {
   transform: translateY(-2px);
 }
 
-.repo-card:focus-within,
-.repo-card:focus-visible {
+.repo-card:focus-within {
   border-color: var(--accent);
   box-shadow: var(--shadow-md);
-}
-
-.repo-card:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .repo-card.private {
@@ -1144,9 +1138,30 @@ a:focus-visible {
   text-decoration: underline;
 }
 
-.card-header .copy-clone {
+.card-header-actions {
+  display: flex;
   grid-column: 2;
   grid-row: 1;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.card-header-actions .icon-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.card-header-actions .icon-button .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.card-header-actions .icon-button:hover {
+  border-color: var(--border);
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 .card-header .badges {
@@ -1841,7 +1856,7 @@ footer {
   .show-more-row,
   .back-to-top,
   .skip-link,
-  .copy-clone,
+  .card-header-actions,
   .language-hint,
   .language-tooltip,
   dialog,

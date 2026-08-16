@@ -970,26 +970,20 @@ function initDetailDialog() {
     }
   });
 
-  const openFromEvent = (event) => {
-    if (!(event.target instanceof Element)) return null;
-    // Links and buttons inside the card keep their own behaviour.
-    if (event.target.closest("a, button")) return null;
-    return event.target.closest(".repo-card");
-  };
-
   elements.grid.addEventListener("click", (event) => {
-    const card = openFromEvent(event);
+    if (!(event.target instanceof Element)) return;
+    const detailTrigger = event.target.closest(".detail-open");
+    if (detailTrigger) {
+      openDetailDialog(detailTrigger.dataset.repoId);
+      return;
+    }
+    // Clicking anywhere else on the card opens the same panel; links and other
+    // buttons inside the card keep their own behaviour.
+    if (event.target.closest("a, button")) return;
+    const card = event.target.closest(".repo-card");
     if (card) {
       openDetailDialog(card.dataset.repoId);
     }
-  });
-
-  elements.grid.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    const target = event.target;
-    if (!(target instanceof HTMLElement) || !target.classList.contains("repo-card")) return;
-    event.preventDefault();
-    openDetailDialog(target.dataset.repoId);
   });
 }
 

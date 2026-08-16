@@ -257,8 +257,10 @@ async function loadRepositories() {
     const byId = new Map(publicRepos.map((repo) => [repo.id, repo]));
     if (accessToken) {
       try {
+        // Must use /user/repos: /users/{username}/repos cannot return another user's
+        // private repos, even when an Authorization token is present.
         const accessible = await fetchAll(
-          `/users/${ACCOUNT}/repos?sort=updated`,
+          `/user/repos?sort=updated&affiliation=owner,collaborator`,
           accessToken,
         );
         for (const repo of accessible) {

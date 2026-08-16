@@ -286,6 +286,7 @@ h1 {
 }
 
 .segmented-option {
+  position: relative;
   box-sizing: border-box;
   display: inline-flex;
   flex: none;

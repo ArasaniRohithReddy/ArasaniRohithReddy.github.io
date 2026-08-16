@@ -191,6 +191,7 @@ function updateSigninControls() {
   const signedIn = Boolean(token());
   elements.signOut.hidden = !signedIn;
   elements.openSignin.textContent = signedIn ? "Update token" : "Sign in";
+  elements.openSignin.classList.toggle("secondary", signedIn);
   elements.signinStatus.hidden = !signedIn;
   elements.signinStatus.textContent = signedIn
     ? "Signed in — showing repositories you can access"

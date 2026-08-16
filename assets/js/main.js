@@ -54,6 +54,39 @@ function token() {
   return sessionStorage.getItem(TOKEN_KEY) || "";
 }
 
+// ---------- Segmented radio-group helper (theme / view toggles) ----------
+
+function setRovingTabindex(buttons, activeButton) {
+  for (const button of buttons) {
+    button.tabIndex = button === activeButton ? 0 : -1;
+  }
+}
+
+function initSegmentedGroup(buttons, onArrowMove) {
+  const list = Array.from(buttons);
+  for (const [index, button] of list.entries()) {
+    button.addEventListener("keydown", (event) => {
+      let nextIndex = null;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        nextIndex = (index + 1) % list.length;
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        nextIndex = (index - 1 + list.length) % list.length;
+      } else if (event.key === "Home") {
+        nextIndex = 0;
+      } else if (event.key === "End") {
+        nextIndex = list.length - 1;
+      }
+      if (nextIndex === null) {
+        return;
+      }
+      event.preventDefault();
+      const nextButton = list[nextIndex];
+      nextButton.focus();
+      onArrowMove(nextButton);
+    });
+  }
+}
+
 // ---------- Theme ----------
 
 function initTheme() {
@@ -69,12 +102,25 @@ function initTheme() {
       updateThemeButtons(theme);
     });
   }
+
+  initSegmentedGroup(elements.themeButtons, (button) => {
+    const theme = button.dataset.theme;
+    setStoredTheme(theme);
+    applyTheme(theme);
+    updateThemeButtons(theme);
+  });
 }
 
 function updateThemeButtons(theme) {
+  let activeButton = null;
   for (const button of elements.themeButtons) {
-    button.setAttribute("aria-pressed", String(button.dataset.theme === theme));
+    const isActive = button.dataset.theme === theme;
+    button.setAttribute("aria-checked", String(isActive));
+    if (isActive) {
+      activeButton = button;
+    }
   }
+  setRovingTabindex(elements.themeButtons, activeButton);
 }
 
 // ---------- View mode (grid / list) ----------
@@ -89,13 +135,24 @@ function initView() {
       setStoredView(button.dataset.view);
     });
   }
+
+  initSegmentedGroup(elements.viewButtons, (button) => {
+    applyView(button.dataset.view);
+    setStoredView(button.dataset.view);
+  });
 }
 
 function applyView(view) {
   elements.grid.classList.toggle("repo-grid--list", view === "list");
+  let activeButton = null;
   for (const button of elements.viewButtons) {
-    button.setAttribute("aria-pressed", String(button.dataset.view === view));
+    const isActive = button.dataset.view === view;
+    button.setAttribute("aria-checked", String(isActive));
+    if (isActive) {
+      activeButton = button;
+    }
   }
+  setRovingTabindex(elements.viewButtons, activeButton);
 }
 
 // ---------- Sign-in dialog ----------

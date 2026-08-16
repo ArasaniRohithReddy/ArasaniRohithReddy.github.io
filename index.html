@@ -49,8 +49,8 @@
       <symbol id="icon-lock" viewBox="0 0 16 16">
         <path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm1.5 2h5V4a2.5 2.5 0 0 0-5 0Z"/>
       </symbol>
-      <symbol id="icon-globe" viewBox="0 0 16 16">
-        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.55 8.5h2.03a12.9 12.9 0 0 0 .77 3.66 6.51 6.51 0 0 1-2.8-3.66Zm0-1a6.51 6.51 0 0 1 2.8-3.66 12.9 12.9 0 0 0-.77 3.66H1.55Zm5.95-5.4c-.5.6-1.13 1.87-1.42 3.9h2.84c-.29-2.03-.92-3.3-1.42-3.9ZM8.5 7h-3a11.9 11.9 0 0 0 .8 3.5H8.5V7Zm0 4.5H6.3c.29 2.03.92 3.3 1.42 3.9.5-.6 1.13-1.87 1.42-3.9H8.5Zm1 0c-.09.83-.23 1.6-.4 2.29A6.52 6.52 0 0 0 12.42 12h-2.05a12.9 12.9 0 0 1-.87-.5ZM12.42 4h-2.05c.34.68.6 1.53.77 2.5h2.03A6.51 6.51 0 0 0 12.42 4ZM9.1 6.5h3.03c-.17-.97-.43-1.82-.77-2.5H9.5c.17.68.31 1.6.4 2.5Zm-4.6 4.5H2.42a6.51 6.51 0 0 0 2.8 3.66c-.34-.68-.6-1.53-.77-2.66Z"/>
+      <symbol id="icon-external" viewBox="0 0 16 16">
+        <path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.75.75 0 0 1-1.06-1.06l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z"/>
       </symbol>
       <symbol id="icon-archive" viewBox="0 0 16 16">
         <path d="M2 2.75C2 2.34 2.34 2 2.75 2h10.5c.41 0 .75.34.75.75v2.5a.75.75 0 0 1-.75.75H13v6.25A1.75 1.75 0 0 1 11.25 14h-6.5A1.75 1.75 0 0 1 3 12.25V6h-.25a.75.75 0 0 1-.75-.75v-2.5ZM4.5 6v6.25c0 .14.11.25.25.25h6.5a.25.25 0 0 0 .25-.25V6h-7ZM3.5 3.5v1h9v-1h-9ZM6 8.75c0-.41.34-.75.75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/>
@@ -90,23 +90,23 @@
             <ul id="profile-meta" class="profile-meta"></ul>
             <a id="profile-link" class="profile-link" href="https://github.com/ArasaniRohithReddy" target="_blank" rel="noopener noreferrer">
               View GitHub profile
-              <svg class="icon" aria-hidden="true"><use href="#icon-globe"></use></svg>
+              <svg class="icon" aria-hidden="true"><use href="#icon-external"></use></svg>
             </a>
           </div>
         </div>
         <div class="hero-actions">
-          <div class="theme-toggle" role="group" aria-label="Theme">
-            <button type="button" data-theme="light" class="theme-btn" aria-pressed="false" title="Light theme">
+          <div class="theme-toggle segmented" role="radiogroup" aria-label="Theme">
+            <button type="button" data-theme="light" class="theme-btn segmented-option" role="radio" aria-checked="false" tabindex="-1" title="Light theme">
               <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg>
-              <span class="visually-hidden">Light theme</span>
+              <span class="segmented-label">Light</span>
             </button>
-            <button type="button" data-theme="dark" class="theme-btn" aria-pressed="false" title="Dark theme">
+            <button type="button" data-theme="dark" class="theme-btn segmented-option" role="radio" aria-checked="false" tabindex="-1" title="Dark theme">
               <svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg>
-              <span class="visually-hidden">Dark theme</span>
+              <span class="segmented-label">Dark</span>
             </button>
-            <button type="button" data-theme="system" class="theme-btn" aria-pressed="false" title="Match system theme">
+            <button type="button" data-theme="system" class="theme-btn segmented-option" role="radio" aria-checked="false" tabindex="-1" title="Match system theme">
               <svg class="icon" aria-hidden="true"><use href="#icon-system"></use></svg>
-              <span class="visually-hidden">System theme</span>
+              <span class="segmented-label">System</span>
             </button>
           </div>
 
@@ -180,12 +180,12 @@
       <section class="repo-section" aria-labelledby="repo-heading">
         <div class="section-heading">
           <h2 id="repo-heading">Repositories</h2>
-          <div class="view-toggle" role="group" aria-label="View mode">
-            <button type="button" data-view="grid" class="view-btn" aria-pressed="false">
+          <div class="view-toggle segmented" role="radiogroup" aria-label="View">
+            <button type="button" data-view="grid" class="view-btn segmented-option" role="radio" aria-checked="false" tabindex="-1" title="Grid view">
               <svg class="icon" aria-hidden="true"><use href="#icon-grid"></use></svg>
               <span class="visually-hidden">Grid view</span>
             </button>
-            <button type="button" data-view="list" class="view-btn" aria-pressed="false">
+            <button type="button" data-view="list" class="view-btn segmented-option" role="radio" aria-checked="false" tabindex="-1" title="List view">
               <svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>
               <span class="visually-hidden">List view</span>
             </button>

@@ -71,7 +71,7 @@ function clearToken() {
 function hasWriteScope(scopes) {
   return scopes
     .split(",")
-    .map((scope) => scope.trim().toLocaleLowerCase())
+    .map((scope) => scope.trim().toLowerCase())
     .some((scope) =>
       scope === "repo" ||
       scope === "workflow" ||
@@ -555,7 +555,7 @@ async function init() {
   }
   const storedToken = token();
   if (storedToken) {
-    const lastActivity = Number(sessionStorage.getItem(TOKEN_ACTIVITY_KEY)) || Date.now();
+    const lastActivity = Number(sessionStorage.getItem(TOKEN_ACTIVITY_KEY));
     if (Date.now() - lastActivity >= INACTIVITY_MS) {
       clearToken();
     } else {

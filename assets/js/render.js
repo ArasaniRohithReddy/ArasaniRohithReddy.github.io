@@ -62,7 +62,7 @@ const MAX_TOPIC_CHIPS = 3;
 function topicChips(topics) {
   const wrap = document.createElement("div");
   const list = Array.isArray(topics) ? topics : [];
-  wrap.className = list.length > 0 ? "topics" : "topics topics--empty";
+  wrap.className = "topics";
   if (list.length === 0) {
     wrap.setAttribute("aria-hidden", "true");
     return wrap;
@@ -277,7 +277,7 @@ export function createRepoDetail(repo) {
     detailRow("Forks", repo.forks_count.toLocaleString()),
     detailRow("Watchers", (repo.watchers_count ?? 0).toLocaleString()),
     detailRow("Open issues", (repo.open_issues_count ?? 0).toLocaleString()),
-    detailRow("Licence", repo.license?.name || "Not specified"),
+    detailRow("License", repo.license?.name || "Not specified"),
     detailRow("Default branch", repo.default_branch || "Unknown"),
     detailRow("Size", `${(repo.size ?? 0).toLocaleString()} KB`),
     detailRow("Created", absoluteDate(repo.created_at)),

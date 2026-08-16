@@ -3,8 +3,23 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0969da" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
     <meta
       name="description"
+      content="Browse repositories owned by ArasaniRohithReddy, with access enforced by GitHub."
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ArasaniRohithReddy · Repositories">
+    <meta
+      property="og:description"
+      content="Browse repositories owned by ArasaniRohithReddy, with access enforced by GitHub."
+    >
+    <meta property="og:url" content="https://arasanirohithreddy.github.io/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ArasaniRohithReddy · Repositories">
+    <meta
+      name="twitter:description"
       content="Browse repositories owned by ArasaniRohithReddy, with access enforced by GitHub."
     >
     <meta
@@ -17,89 +32,221 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6feb'/%3E%3Cpath fill='white' d='M18 46 29 17h7l11 29h-8l-2-7H27l-2 7Zm11-14h6l-3-9Z'/%3E%3C/svg%3E"
     >
     <link rel="stylesheet" href="assets/styles.css">
-    <script src="assets/app.js" defer></script>
+    <script type="module" src="assets/js/main.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#repositories">Skip to repositories</a>
 
+    <!-- Inline SVG sprite: icons are referenced with <use href="#icon-…"> and are
+         aria-hidden; every usage pairs the icon with a .visually-hidden label. -->
+    <svg hidden aria-hidden="true">
+      <symbol id="icon-star" viewBox="0 0 16 16">
+        <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.79L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.192L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>
+      </symbol>
+      <symbol id="icon-fork" viewBox="0 0 16 16">
+        <path d="M5 3.25a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Zm0 2.122a2.25 2.25 0 1 1 1.5 0v.878A2.25 2.25 0 0 0 8.75 8.5h1.5v-.878a2.25 2.25 0 1 1 1.5 0V8.5A2.25 2.25 0 0 1 10.5 10.75H8.75v.878a2.25 2.25 0 1 1-1.5 0v-.878A3.75 3.75 0 0 1 3.5 7v-1.628Zm7 0a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0ZM6.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"/>
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 16 16">
+        <path d="M4 4a4 4 0 0 1 8 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.784 2.784 6 3.75 6H4Zm1.5 2h5V4a2.5 2.5 0 0 0-5 0Z"/>
+      </symbol>
+      <symbol id="icon-globe" viewBox="0 0 16 16">
+        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.55 8.5h2.03a12.9 12.9 0 0 0 .77 3.66 6.51 6.51 0 0 1-2.8-3.66Zm0-1a6.51 6.51 0 0 1 2.8-3.66 12.9 12.9 0 0 0-.77 3.66H1.55Zm5.95-5.4c-.5.6-1.13 1.87-1.42 3.9h2.84c-.29-2.03-.92-3.3-1.42-3.9ZM8.5 7h-3a11.9 11.9 0 0 0 .8 3.5H8.5V7Zm0 4.5H6.3c.29 2.03.92 3.3 1.42 3.9.5-.6 1.13-1.87 1.42-3.9H8.5Zm1 0c-.09.83-.23 1.6-.4 2.29A6.52 6.52 0 0 0 12.42 12h-2.05a12.9 12.9 0 0 1-.87-.5ZM12.42 4h-2.05c.34.68.6 1.53.77 2.5h2.03A6.51 6.51 0 0 0 12.42 4ZM9.1 6.5h3.03c-.17-.97-.43-1.82-.77-2.5H9.5c.17.68.31 1.6.4 2.5Zm-4.6 4.5H2.42a6.51 6.51 0 0 0 2.8 3.66c-.34-.68-.6-1.53-.77-2.66Z"/>
+      </symbol>
+      <symbol id="icon-archive" viewBox="0 0 16 16">
+        <path d="M2 2.75C2 2.34 2.34 2 2.75 2h10.5c.41 0 .75.34.75.75v2.5a.75.75 0 0 1-.75.75H13v6.25A1.75 1.75 0 0 1 11.25 14h-6.5A1.75 1.75 0 0 1 3 12.25V6h-.25a.75.75 0 0 1-.75-.75v-2.5ZM4.5 6v6.25c0 .14.11.25.25.25h6.5a.25.25 0 0 0 .25-.25V6h-7ZM3.5 3.5v1h9v-1h-9ZM6 8.75c0-.41.34-.75.75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/>
+      </symbol>
+      <symbol id="icon-clock" viewBox="0 0 16 16">
+        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm.75 4v4.25l3.25 1.95-.75 1.23-3.98-2.4V4h1.48Z"/>
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 16 16">
+        <path d="M10.68 11.74a6 6 0 1 1 1.06-1.06l3.29 3.29a.75.75 0 1 1-1.06 1.06l-3.29-3.29ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/>
+      </symbol>
+      <symbol id="icon-grid" viewBox="0 0 16 16">
+        <path d="M1 2.75C1 1.784 1.784 1 2.75 1h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 6.25 8h-3.5A1.75 1.75 0 0 1 1 6.25v-3.5Zm8 0C9 1.784 9.784 1 10.75 1h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 8h-3.5A1.75 1.75 0 0 1 9 6.25v-3.5Zm-8 8C1 9.784 1.784 9 2.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 6.25 16h-3.5A1.75 1.75 0 0 1 1 14.25v-3.5Zm8 0C9 9.784 9.784 9 10.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 16h-3.5A1.75 1.75 0 0 1 9 14.25v-3.5Z"/>
+      </symbol>
+      <symbol id="icon-list" viewBox="0 0 16 16">
+        <path d="M2 3.75A.75.75 0 0 1 2.75 3h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75Zm0 4A.75.75 0 0 1 2.75 7h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 7.75Zm0 4a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z"/>
+      </symbol>
+      <symbol id="icon-sun" viewBox="0 0 16 16">
+        <path d="M8 4.5A3.5 3.5 0 1 0 8 11.5 3.5 3.5 0 0 0 8 4.5ZM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0Zm0 13.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75ZM2.343 2.343a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 1 1-1.06 1.061l-1.06-1.06a.75.75 0 0 1 0-1.061Zm9.193 9.193a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061l-1.061-1.06a.75.75 0 0 1 0-1.061ZM0 8a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H.75A.75.75 0 0 1 0 8Zm13.25 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM2.343 13.657a.75.75 0 0 1 0-1.06l1.06-1.061a.75.75 0 1 1 1.061 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0Zm9.193-9.193a.75.75 0 0 1 0-1.06l1.06-1.061a.75.75 0 1 1 1.061 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0Z"/>
+      </symbol>
+      <symbol id="icon-moon" viewBox="0 0 16 16">
+        <path d="M9.598.75c.415-.157.849.279.692.694a5.5 5.5 0 0 0 7.257 7.026c.415-.157.849.279.692.694A7.501 7.501 0 1 1 8.858.75Z" transform="scale(0.8)"/>
+      </symbol>
+      <symbol id="icon-system" viewBox="0 0 16 16">
+        <path d="M1.75 2h12.5c.966 0 1.75.784 1.75 1.75v7c0 .966-.784 1.75-1.75 1.75H9v1h2.25a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5H7v-1H1.75A1.75 1.75 0 0 1 0 10.75v-7C0 2.784.784 2 1.75 2Zm0 1.5a.25.25 0 0 0-.25.25v7c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-7a.25.25 0 0 0-.25-.25H1.75Z"/>
+      </symbol>
+    </svg>
+
     <header class="site-header">
-      <div class="shell profile">
-        <img id="avatar" class="avatar" width="112" height="112" alt="" hidden>
-        <div>
-          <p class="eyebrow">GitHub repository dashboard</p>
-          <h1 id="profile-name">ArasaniRohithReddy</h1>
-          <p id="profile-bio" class="bio">Loading account details…</p>
-          <p id="public-count" class="profile-count"></p>
+      <div class="hero-backdrop" aria-hidden="true"></div>
+      <div class="shell hero">
+        <div class="hero-main">
+          <img id="avatar" class="avatar" width="112" height="112" alt="" hidden>
+          <div class="hero-text">
+            <p class="eyebrow">GitHub repository dashboard</p>
+            <h1 id="profile-name">ArasaniRohithReddy</h1>
+            <p id="profile-bio" class="bio">Loading account details…</p>
+            <ul id="profile-meta" class="profile-meta"></ul>
+            <a id="profile-link" class="profile-link" href="https://github.com/ArasaniRohithReddy" target="_blank" rel="noopener noreferrer">
+              View GitHub profile
+              <svg class="icon" aria-hidden="true"><use href="#icon-globe"></use></svg>
+            </a>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <div class="theme-toggle" role="group" aria-label="Theme">
+            <button type="button" data-theme="light" class="theme-btn" aria-pressed="false" title="Light theme">
+              <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg>
+              <span class="visually-hidden">Light theme</span>
+            </button>
+            <button type="button" data-theme="dark" class="theme-btn" aria-pressed="false" title="Dark theme">
+              <svg class="icon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+              <span class="visually-hidden">Dark theme</span>
+            </button>
+            <button type="button" data-theme="system" class="theme-btn" aria-pressed="false" title="Match system theme">
+              <svg class="icon" aria-hidden="true"><use href="#icon-system"></use></svg>
+              <span class="visually-hidden">System theme</span>
+            </button>
+          </div>
+
+          <div class="signin-area">
+            <p id="signin-status" class="signin-status" hidden></p>
+            <button id="open-signin" type="button" class="secondary">Sign in</button>
+            <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
+          </div>
         </div>
       </div>
     </header>
 
-    <main id="repositories" class="shell">
-      <section class="security-panel" aria-labelledby="access-heading">
-        <div>
-          <h2 id="access-heading">Repositories GitHub lets you see</h2>
-          <p>
-            Anonymous access shows public repositories only. Optionally paste
-            your own GitHub token to include private repositories that GitHub
-            already permits you to access.
-          </p>
+    <dialog id="signin-dialog" class="signin-dialog" aria-labelledby="signin-heading">
+      <form id="token-form" method="dialog" class="token-form">
+        <div class="dialog-heading">
+          <h2 id="signin-heading">Sign in with a token</h2>
+          <button type="button" id="close-signin" class="icon-button" aria-label="Close">
+            &times;
+          </button>
         </div>
-        <form id="token-form" class="token-form">
-          <label for="token">GitHub personal access token</label>
-          <div class="token-row">
-            <input
-              id="token"
-              name="token"
-              type="password"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="github_pat_…"
-              required
-            >
-            <button type="submit">Use token</button>
-            <button id="sign-out" class="secondary" type="button" hidden>
-              Sign out / clear token
-            </button>
-          </div>
-        </form>
+        <p class="dialog-help">
+          Optionally paste a GitHub personal access token to also see private
+          repositories that GitHub already permits you to access. Create a
+          <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
+            least-privilege fine-grained token
+          </a>
+          with read-only metadata access.
+        </p>
+        <label for="token">GitHub personal access token</label>
+        <div class="token-row">
+          <input
+            id="token"
+            name="token"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="github_pat_…"
+            required
+          >
+          <button type="submit">Use token</button>
+        </div>
         <p class="security-note">
           <strong>Security note:</strong> GitHub—not this page—enforces
           repository access. The token stays in this tab's session storage and
           is sent only to <code>api.github.com</code>. This is not app-level
           authentication; use a least-privilege token and clear it when done.
         </p>
+      </form>
+    </dialog>
+
+    <main id="repositories" class="shell">
+      <section class="stats-strip" aria-label="Repository statistics">
+        <div class="stat">
+          <span id="stat-repos" class="stat-value">–</span>
+          <span class="stat-label">Repositories shown</span>
+        </div>
+        <div class="stat">
+          <span id="stat-stars" class="stat-value">–</span>
+          <span class="stat-label">Total stars</span>
+        </div>
+        <div class="stat">
+          <span id="stat-languages" class="stat-value">–</span>
+          <span class="stat-label">Languages used</span>
+        </div>
+        <div class="stat">
+          <span id="stat-top-language" class="stat-value">–</span>
+          <span class="stat-label">Most used language</span>
+        </div>
       </section>
 
       <section class="repo-section" aria-labelledby="repo-heading">
         <div class="section-heading">
-          <div>
-            <h2 id="repo-heading">Repositories</h2>
-            <p id="result-count" class="muted"></p>
-          </div>
-          <div class="controls">
-            <div>
-              <label for="search">Search</label>
-              <input id="search" type="search" placeholder="Name or description">
-            </div>
-            <div>
-              <label for="sort">Sort by</label>
-              <select id="sort">
-                <option value="updated">Recently updated</option>
-                <option value="name">Name A–Z</option>
-                <option value="stars">Most stars</option>
-              </select>
-            </div>
+          <h2 id="repo-heading">Repositories</h2>
+          <div class="view-toggle" role="group" aria-label="View mode">
+            <button type="button" data-view="grid" class="view-btn" aria-pressed="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-grid"></use></svg>
+              <span class="visually-hidden">Grid view</span>
+            </button>
+            <button type="button" data-view="list" class="view-btn" aria-pressed="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>
+              <span class="visually-hidden">List view</span>
+            </button>
           </div>
         </div>
 
-        <div id="status" class="status" role="status" aria-live="polite">
-          Loading repositories…
+        <div class="filter-bar">
+          <div class="search-field">
+            <svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+            <label for="search" class="visually-hidden">Search repositories</label>
+            <input id="search" type="search" placeholder="Search name or description…">
+            <kbd class="search-hint" aria-hidden="true">/</kbd>
+          </div>
+
+          <div class="filter-field">
+            <label for="language-filter">Language</label>
+            <select id="language-filter">
+              <option value="">All languages</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="visibility-filter">Visibility</label>
+            <select id="visibility-filter">
+              <option value="">All</option>
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="sort">Sort by</label>
+            <select id="sort">
+              <option value="updated">Recently updated</option>
+              <option value="name">Name A–Z</option>
+              <option value="stars">Most stars</option>
+            </select>
+          </div>
+
+          <button id="clear-filters" type="button" class="secondary clear-filters" hidden>
+            Clear filters<span id="active-filter-count"></span>
+          </button>
         </div>
-        <div id="error" class="error" role="alert" hidden></div>
+
+        <p id="result-count" class="muted result-count"></p>
+
+        <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+        <div id="skeletons" class="repo-grid" aria-hidden="true" hidden>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+        <div id="error" class="error-card" role="alert" hidden>
+          <p id="error-message"></p>
+          <button id="retry" type="button" class="secondary">Retry</button>
+        </div>
         <div id="repo-grid" class="repo-grid" aria-busy="true"></div>
         <div id="empty" class="empty-state" hidden>
-          <h3>No repositories found</h3>
-          <p>Try changing your search, or sign in with a token.</p>
+          <h3>No repositories match your filters</h3>
+          <p>Try clearing filters or changing your search.</p>
         </div>
       </section>
     </main>

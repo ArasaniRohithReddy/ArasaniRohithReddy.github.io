@@ -14,6 +14,24 @@ GitHub API.
 
 The workflow publishes the repository root, where `index.html` is located.
 
+## Using the dashboard
+
+- **Search, filter and sort:** the filter bar lets you search by name/description,
+  filter by language or visibility (All / Public / Private), and sort by recently
+  updated, name, or star count. Filters compose together, and a result count
+  ("Showing 12 of 24 repositories") plus an active-filter count is shown. Use
+  **Clear filters** to reset everything at once.
+- **Keyboard shortcuts:** press `/` anywhere on the page to focus the search box,
+  and `Escape` while the search box is focused clears it.
+- **Grid / list view:** toggle between a card grid and a compact list using the
+  view switch above the repository list. Your choice is remembered
+  (`localStorage`) across visits.
+- **Theme:** choose light, dark, or system (the default) with the theme toggle
+  in the header. The preference is stored in `localStorage`; the GitHub token is
+  never included in it.
+- **Stats strip:** shows the total repositories currently shown, total stars,
+  number of distinct languages, and the most-used language among them.
+
 ## Viewing repositories you can access
 
 Anonymous visitors see only repositories returned by GitHub's public
@@ -21,16 +39,18 @@ Anonymous visitors see only repositories returned by GitHub's public
 
 To include private repositories that GitHub permits your account to view:
 
-1. Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new).
-2. Select only the repository access needed. No repository permissions beyond
+1. Select **Sign in** in the header to open the compact sign-in panel.
+2. Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new).
+3. Select only the repository access needed. No repository permissions beyond
    read-only metadata are required. If using a classic PAT instead, select
    `repo` for private repositories or `public_repo` for public repositories.
-3. Paste the token into the site's password field and choose **Use token**.
-4. Choose **Sign out / clear token** when finished.
+4. Paste the token into the password field and choose **Use token**.
+5. Choose **Sign out** when finished.
 
-The token is kept only in the browser tab's `sessionStorage` and is sent only
-to `api.github.com`. It is never committed, placed in a URL or cookie, or sent
-to this static site.
+While signed in, a small "Signed in — showing repositories you can access"
+indicator appears next to the sign-out control. The token is kept only in the
+browser tab's `sessionStorage` and is sent only to `api.github.com`. It is
+never committed, placed in a URL or cookie, or sent to this static site.
 
 ## Security model and limits
 

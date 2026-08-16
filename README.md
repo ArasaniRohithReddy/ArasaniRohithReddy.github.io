@@ -35,9 +35,10 @@ to this static site.
 ## Security model and limits
 
 The site contains no repository inventory, access-control list, or application
-role logic. GitHub enforces access when the browser requests `/user/repos`;
-the page then keeps only repositories owned by `ArasaniRohithReddy` and unions
-them with the public response. The page cannot grant access that the supplied
+role logic. GitHub enforces access when the browser requests
+`/users/ArasaniRohithReddy/repos` with the supplied token; the page then keeps
+only repositories owned by `ArasaniRohithReddy` and unions them with the
+anonymous public response. The page cannot grant access that the supplied
 token does not already have.
 
 This is not application-level authentication. A token used in browser

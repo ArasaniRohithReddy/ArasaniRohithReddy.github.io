@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Browse repositories owned by ArasaniRohithReddy, with access enforced by GitHub."
+    >
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src https://api.github.com; img-src 'self' data: https://avatars.githubusercontent.com; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'"
+    >
+    <title>ArasaniRohithReddy · Repositories</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6feb'/%3E%3Cpath fill='white' d='M18 46 29 17h7l11 29h-8l-2-7H27l-2 7Zm11-14h6l-3-9Z'/%3E%3C/svg%3E"
+    >
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#repositories">Skip to repositories</a>
+
+    <header class="site-header">
+      <div class="shell profile">
+        <img id="avatar" class="avatar" width="112" height="112" alt="" hidden>
+        <div>
+          <p class="eyebrow">GitHub repository dashboard</p>
+          <h1 id="profile-name">ArasaniRohithReddy</h1>
+          <p id="profile-bio" class="bio">Loading account details…</p>
+          <p id="public-count" class="profile-count"></p>
+        </div>
+      </div>
+    </header>
+
+    <main id="repositories" class="shell">
+      <section class="security-panel" aria-labelledby="access-heading">
+        <div>
+          <h2 id="access-heading">Repositories GitHub lets you see</h2>
+          <p>
+            Anonymous access shows public repositories only. Optionally paste
+            your own GitHub token to include private repositories that GitHub
+            already permits you to access.
+          </p>
+        </div>
+        <form id="token-form" class="token-form">
+          <label for="token">GitHub personal access token</label>
+          <div class="token-row">
+            <input
+              id="token"
+              name="token"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="github_pat_…"
+              required
+            >
+            <button type="submit">Use token</button>
+            <button id="sign-out" class="secondary" type="button" hidden>
+              Sign out / clear token
+            </button>
+          </div>
+        </form>
+        <p class="security-note">
+          <strong>Security note:</strong> GitHub—not this page—enforces
+          repository access. The token stays in this tab's session storage and
+          is sent only to <code>api.github.com</code>. This is not app-level
+          authentication; use a least-privilege token and clear it when done.
+        </p>
+      </section>
+
+      <section class="repo-section" aria-labelledby="repo-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="repo-heading">Repositories</h2>
+            <p id="result-count" class="muted"></p>
+          </div>
+          <div class="controls">
+            <div>
+              <label for="search">Search</label>
+              <input id="search" type="search" placeholder="Name or description">
+            </div>
+            <div>
+              <label for="sort">Sort by</label>
+              <select id="sort">
+                <option value="updated">Recently updated</option>
+                <option value="name">Name A–Z</option>
+                <option value="stars">Most stars</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="status" class="status" role="status" aria-live="polite">
+          Loading repositories…
+        </div>
+        <div id="error" class="error" role="alert" hidden></div>
+        <div id="repo-grid" class="repo-grid" aria-busy="true"></div>
+        <div id="empty" class="empty-state" hidden>
+          <h3>No repositories found</h3>
+          <p>Try changing your search, or sign in with a token.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell">
+      Repository access is evaluated live by
+      <a href="https://github.com/" rel="noopener noreferrer">GitHub</a>.
+    </footer>
+  </body>
+</html>

@@ -293,6 +293,9 @@ h1 {
   align-items: flex-end;
   gap: var(--space-3);
   justify-self: end;
+  min-width: 0;
+  width: max-content;
+  max-width: 100%;
 }
 
 .segmented {
@@ -362,7 +365,9 @@ h1 {
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-  max-width: 34rem;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 48rem;
   padding: var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -371,6 +376,8 @@ h1 {
 }
 
 .signin-status {
+  min-width: 0;
+  flex: 1 1 auto;
   margin: 0;
   padding: 0.45rem 0.7rem;
   border: 1px solid color-mix(in srgb, var(--success) 32%, transparent);
@@ -379,6 +386,18 @@ h1 {
   color: var(--text);
   font-size: 0.85rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signin-area button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.signin-status--warning {
+  border-color: var(--warning, #9a6700);
 }
 
 .signin-status::before {
@@ -610,6 +629,12 @@ a:focus-visible {
   margin-bottom: var(--space-3);
 }
 
+.token-error {
+  margin: 0;
+  color: var(--danger-text);
+  font-size: 0.85rem;
+}
+
 .search-field {
   position: relative;
   display: flex;
@@ -750,10 +775,10 @@ a:focus-visible {
 }
 
 .repo-grid--list .repo-card {
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(12rem, 1fr) minmax(8rem, 14rem) minmax(17rem, auto);
   align-items: center;
-  gap: var(--space-3) var(--space-5);
+  gap: var(--space-4);
   padding: var(--space-4) var(--space-5);
 }
 
@@ -761,14 +786,39 @@ a:focus-visible {
   transform: none;
 }
 
-.repo-grid--list .card-heading {
-  flex: 1 1 16rem;
+.repo-grid--list .card-heading,
+.repo-grid--list .description,
+.repo-grid--list .topics,
+.repo-grid--list .repo-meta {
+  min-width: 0;
+  min-height: 0;
 }
 
-.repo-grid--list .description,
+.repo-grid--list .card-heading {
+  display: block;
+}
+
+.repo-grid--list .badges {
+  margin-top: 0.35rem;
+}
+
+.repo-grid--list .description {
+  -webkit-line-clamp: 2;
+}
+
 .repo-grid--list .topics {
-  flex: 2 1 16rem;
-  min-height: 0;
+  max-height: 3.4rem;
+}
+
+.repo-grid--list .repo-meta {
+  justify-content: flex-end;
+  margin-top: 0;
+  text-align: right;
+}
+
+.repo-grid--list .repo-meta .updated {
+  flex-basis: 100%;
+  justify-content: flex-end;
 }
 
 .repo-card.private {
@@ -963,6 +1013,23 @@ footer {
   display: none !important;
 }
 
+@media (max-width: 1100px) {
+  .repo-grid--list .repo-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .repo-grid--list .repo-meta {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .repo-grid--list .repo-meta .updated {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
@@ -975,6 +1042,10 @@ footer {
 
   .signin-area {
     max-width: none;
+  }
+
+  .hero-actions {
+    width: 100%;
   }
 
   .stats-strip {
@@ -1023,11 +1094,6 @@ footer {
   .repo-grid,
   .repo-grid--list {
     grid-template-columns: 1fr;
-  }
-
-  .repo-grid--list .repo-card {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .repo-meta .updated {

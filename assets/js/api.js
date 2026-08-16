@@ -38,6 +38,22 @@ export async function githubRequest(path, accessToken = "") {
   return await response.json();
 }
 
+export async function validateToken(accessToken) {
+  const response = await fetch(`${API_ROOT}/user`, {
+    headers: requestHeaders(accessToken),
+    referrerPolicy: "no-referrer",
+  });
+
+  if (!response.ok) {
+    throw new GitHubApiError(response);
+  }
+
+  return {
+    scopes: response.headers.get("x-oauth-scopes") || "",
+    expiration: response.headers.get("github-authentication-token-expiration") || "",
+  };
+}
+
 export async function fetchAll(path, accessToken = "") {
   const items = [];
 

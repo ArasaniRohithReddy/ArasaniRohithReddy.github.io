@@ -131,12 +131,14 @@
           </button>
         </div>
         <p class="dialog-help">
-          Optionally paste a GitHub personal access token to also see private
-          repositories that GitHub already permits you to access. Create a
+          Create a
           <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
-            least-privilege fine-grained token
+            fine-grained personal access token
           </a>
-          with read-only metadata access.
+          with <strong>Repository access: Only select repositories</strong> (or
+          All repositories) and <strong>Metadata: Read-only</strong> only. A
+          classic token with <code>repo</code> scope grants unnecessary write
+          access to every repository.
         </p>
         <label for="token">GitHub personal access token</label>
         <div class="token-row">
@@ -151,11 +153,14 @@
           >
           <button type="submit">Use token</button>
         </div>
+        <p id="token-error" class="token-error" role="alert" hidden></p>
         <p class="security-note">
-          <strong>Security note:</strong> GitHub—not this page—enforces
-          repository access. The token stays in this tab's session storage and
-          is sent only to <code>api.github.com</code>. This is not app-level
-          authentication; use a least-privilege token and clear it when done.
+          <strong>Security note:</strong> This is not application-level
+          authentication. GitHub enforces all access. The token stays in this
+          tab's session storage, never leaves the browser except in requests to
+          <code>api.github.com</code>, and is cleared after 60 minutes of
+          inactivity. <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">Revoke it</a>
+          when finished.
         </p>
       </form>
     </dialog>

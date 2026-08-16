@@ -41,16 +41,19 @@ To include private repositories that GitHub permits your account to view:
 
 1. Select **Sign in** in the header to open the compact sign-in panel.
 2. Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new).
-3. Select only the repository access needed. No repository permissions beyond
-   read-only metadata are required. If using a classic PAT instead, select
-   `repo` for private repositories or `public_repo` for public repositories.
+3. Choose **Repository access: Only select repositories** (or All repositories)
+   and grant **Metadata: Read-only** only. Do not use a classic `repo`-scoped
+   token: it grants unnecessary write access to every repository.
 4. Paste the token into the password field and choose **Use token**.
 5. Choose **Sign out** when finished.
 
-While signed in, a small "Signed in — showing repositories you can access"
-indicator appears next to the sign-out control. The token is kept only in the
-browser tab's `sessionStorage` and is sent only to `api.github.com`. It is
-never committed, placed in a URL or cookie, or sent to this static site.
+The token is validated with `GET https://api.github.com/user` before it is
+stored. Invalid tokens are rejected; classic tokens with write-capable scopes
+produce a non-blocking warning, and GitHub's token-expiration header is shown
+when available. The token is kept only in the browser tab's `sessionStorage`,
+is cleared after 60 minutes without activity, and is sent only to
+`api.github.com`. It is never written to the DOM, URL, `localStorage`, console,
+cookie, or repository.
 
 ## Security model and limits
 
@@ -61,9 +64,10 @@ then keeps only repositories owned by `ArasaniRohithReddy` and unions them
 with the anonymous public `/users/ArasaniRohithReddy/repos` response. The page
 cannot grant access that the supplied token does not already have.
 
-This is not application-level authentication. A token used in browser
+This is not application-level authentication. GitHub enforces all access; a token used in browser
 JavaScript remains accessible to code running in that page, so visitors should
-use a short-lived, least-privilege token and clear it afterward. True
-server-enforced row-level security would require a GitHub OAuth app and a
-serverless token-exchange backend. That architecture is intentionally out of
-scope for this static site.
+use a short-lived, least-privilege token and
+[revoke it](https://github.com/settings/tokens) when finished. A true login
+would require GitHub OAuth plus a backend that safely holds the client secret
+and exchanges authorization codes. That architecture is out of scope for
+GitHub Pages and this static site.

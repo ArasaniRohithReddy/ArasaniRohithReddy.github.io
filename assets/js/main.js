@@ -1,6 +1,6 @@
 "use strict";
 
-import { GitHubApiError, loadAccountData } from "./api.js";
+import { GitHubApiError, loadAccountData, validateToken } from "./api.js";
 import { createRepoCard, computeStats } from "./render.js";
 import {
   applyTheme,
@@ -11,6 +11,9 @@ import {
 } from "./preferences.js";
 
 const TOKEN_KEY = "github-repository-dashboard-token";
+const TOKEN_ACTIVITY_KEY = "github-repository-dashboard-token-last-activity";
+const INACTIVITY_MS = 60 * 60 * 1000;
+const ACTIVITY_WRITE_INTERVAL_MS = 60 * 1000;
 const SEARCH_DEBOUNCE_MS = 150;
 
 const elements = {
@@ -26,6 +29,7 @@ const elements = {
   signinStatus: document.querySelector("#signin-status"),
   tokenForm: document.querySelector("#token-form"),
   tokenInput: document.querySelector("#token"),
+  tokenError: document.querySelector("#token-error"),
   signOut: document.querySelector("#sign-out"),
   search: document.querySelector("#search"),
   languageFilter: document.querySelector("#language-filter"),
@@ -49,9 +53,57 @@ const elements = {
 
 let repositories = [];
 let debouncedSearchRender = null;
+let tokenDetails = null;
+let inactivityTimer = null;
+let lastActivityWrite = 0;
 
 function token() {
   return sessionStorage.getItem(TOKEN_KEY) || "";
+}
+
+function clearToken() {
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_ACTIVITY_KEY);
+  tokenDetails = null;
+  clearTimeout(inactivityTimer);
+}
+
+function hasWriteScope(scopes) {
+  return scopes
+    .split(",")
+    .map((scope) => scope.trim().toLocaleLowerCase())
+    .some((scope) =>
+      scope === "repo" ||
+      scope === "workflow" ||
+      scope.startsWith("write:") ||
+      scope.startsWith("delete:") ||
+      scope.startsWith("admin:")
+    );
+}
+
+function armInactivityTimer(lastActivity = Date.now()) {
+  clearTimeout(inactivityTimer);
+  const remaining = INACTIVITY_MS - (Date.now() - lastActivity);
+  if (remaining <= 0) {
+    clearToken();
+    updateSigninControls();
+    loadRepositories();
+    return;
+  }
+  inactivityTimer = setTimeout(() => {
+    clearToken();
+    updateSigninControls();
+    loadRepositories();
+  }, remaining);
+}
+
+function recordActivity() {
+  if (!token() || document.hidden || Date.now() - lastActivityWrite < ACTIVITY_WRITE_INTERVAL_MS) {
+    return;
+  }
+  lastActivityWrite = Date.now();
+  sessionStorage.setItem(TOKEN_ACTIVITY_KEY, String(lastActivityWrite));
+  armInactivityTimer(lastActivityWrite);
 }
 
 // ---------- Segmented radio-group helper (theme / view toggles) ----------
@@ -162,6 +214,7 @@ let lastFocusedBeforeDialog = null;
 function openSigninDialog() {
   lastFocusedBeforeDialog = document.activeElement;
   elements.signinDialog.showModal();
+  elements.tokenError.hidden = true;
   elements.tokenInput.focus();
 }
 
@@ -193,9 +246,32 @@ function updateSigninControls() {
   elements.openSignin.textContent = signedIn ? "Update token" : "Sign in";
   elements.openSignin.classList.toggle("secondary", signedIn);
   elements.signinStatus.hidden = !signedIn;
-  elements.signinStatus.textContent = signedIn
-    ? "Signed in — showing repositories you can access"
-    : "";
+  if (signedIn) {
+    const details = [];
+    if (tokenDetails?.expiration) {
+      const expiration = new Date(tokenDetails.expiration);
+      details.push(
+        Number.isNaN(expiration.getTime())
+          ? `Token expires ${tokenDetails.expiration}`
+          : `Token expires ${expiration.toLocaleString()}`,
+      );
+    }
+    if (tokenDetails && hasWriteScope(tokenDetails.scopes)) {
+      details.push("Warning: switch to a read-only fine-grained token");
+      elements.signinStatus.classList.add("signin-status--warning");
+    } else {
+      elements.signinStatus.classList.remove("signin-status--warning");
+    }
+    elements.signinStatus.textContent = ["Signed in", ...details].join(" · ");
+    elements.signinStatus.title = [
+      "Signed in — showing repositories you can access.",
+      ...details,
+    ].join(" ");
+  } else {
+    elements.signinStatus.textContent = "";
+    elements.signinStatus.removeAttribute("title");
+    elements.signinStatus.classList.remove("signin-status--warning");
+  }
   elements.tokenInput.placeholder = signedIn ? "Replace current token" : "github_pat_…";
 }
 
@@ -431,26 +507,42 @@ function initKeyboardShortcuts() {
 }
 
 function initTokenForm() {
-  elements.tokenForm.addEventListener("submit", (event) => {
+  elements.tokenForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submittedToken = elements.tokenInput.value.trim();
     if (!submittedToken) return;
-    sessionStorage.setItem(TOKEN_KEY, submittedToken);
-    elements.tokenInput.value = "";
-    updateSigninControls();
-    closeSigninDialog();
-    loadRepositories();
+    const submitButton = elements.tokenForm.querySelector('[type="submit"]');
+    submitButton.disabled = true;
+    elements.tokenError.hidden = true;
+    try {
+      tokenDetails = await validateToken(submittedToken);
+      sessionStorage.setItem(TOKEN_KEY, submittedToken);
+      sessionStorage.setItem(TOKEN_ACTIVITY_KEY, String(Date.now()));
+      elements.tokenInput.value = "";
+      updateSigninControls();
+      armInactivityTimer();
+      closeSigninDialog();
+      loadRepositories();
+    } catch (error) {
+      elements.tokenError.textContent =
+        error instanceof GitHubApiError && error.status === 401
+          ? "GitHub rejected this token. Check that it is valid and has not expired."
+          : "The token could not be validated. Check your connection and try again.";
+      elements.tokenError.hidden = false;
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 
   elements.signOut.addEventListener("click", () => {
-    sessionStorage.removeItem(TOKEN_KEY);
+    clearToken();
     elements.tokenInput.value = "";
     updateSigninControls();
     loadRepositories();
   });
 }
 
-function init() {
+async function init() {
   initTheme();
   initView();
   initSigninDialog();
@@ -458,6 +550,25 @@ function init() {
   initFilters();
   initKeyboardShortcuts();
   elements.retry.addEventListener("click", loadRepositories);
+  for (const eventName of ["pointerdown", "keydown", "scroll"]) {
+    document.addEventListener(eventName, recordActivity, { passive: true });
+  }
+  const storedToken = token();
+  if (storedToken) {
+    const lastActivity = Number(sessionStorage.getItem(TOKEN_ACTIVITY_KEY)) || Date.now();
+    if (Date.now() - lastActivity >= INACTIVITY_MS) {
+      clearToken();
+    } else {
+      try {
+        tokenDetails = await validateToken(storedToken);
+        armInactivityTimer(lastActivity);
+      } catch (error) {
+        if (error instanceof GitHubApiError && error.status === 401) {
+          clearToken();
+        }
+      }
+    }
+  }
   updateSigninControls();
   loadRepositories();
 }

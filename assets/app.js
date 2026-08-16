@@ -115,7 +115,7 @@ function relativeDate(value) {
     }
   }
 
-  return formatter.format(-elapsedSeconds, "second");
+  return formatter.format(-elapsedSeconds || 0, "second");
 }
 
 function badge(label, className = "") {

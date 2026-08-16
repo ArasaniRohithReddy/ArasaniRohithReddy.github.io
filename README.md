@@ -17,10 +17,29 @@ The workflow publishes the repository root, where `index.html` is located.
 ## Using the dashboard
 
 - **Search, filter and sort:** the filter bar lets you search by name/description,
-  filter by language or visibility (All / Public / Private), and sort by recently
-  updated, name, or star count. Filters compose together, and a result count
-  ("Showing 12 of 24 repositories") plus an active-filter count is shown. Use
-  **Clear filters** to reset everything at once.
+  filter by language, visibility (All / Public / Private), archived state and
+  forks, and sort by recently updated, name, or star count. Filters compose
+  together, and a result count ("Showing 12 of 24 repositories") plus an
+  active-filter count is shown. Use **Clear filters** to reset everything at once.
+- **Shareable views:** the current search, language, visibility, archived, fork,
+  sort and view selections are mirrored in the URL query string
+  (`?q=…&lang=…&vis=…&arch=…&fork=…&sort=…&view=…`) with `history.replaceState`,
+  so a link reproduces the same view. Parameters at their default value are
+  omitted. **Copy link to this view** copies the current URL. When a parameter is
+  absent, the stored `localStorage` preference is used instead.
+- **Featured repositories:** in the default "Recently updated" ordering the most
+  significant repositories lead the list with a **Featured** badge. An optional
+  curated allow-list of names (`FEATURED_REPO_NAMES` in `assets/js/main.js`) takes
+  precedence; otherwise the most-starred repositories are used. Choosing **Name**
+  or **Most stars** overrides the featured ordering.
+- **Language breakdown:** a stacked bar with an accessible legend shows the
+  language distribution of the repositories currently shown, recomputed whenever
+  filters change. It is derived from the repository data already fetched, so it
+  costs no extra API requests.
+- **Copy clone URL:** each repository card has a copy button for its HTTPS clone
+  URL, with visual and screen-reader confirmation.
+- **Progressive rendering:** the first 24 repositories render immediately and
+  **Show more repositories** reveals the rest, so large accounts stay responsive.
 - **Keyboard shortcuts:** press `/` anywhere on the page to focus the search box,
   and `Escape` while the search box is focused clears it.
 - **Grid / list view:** toggle between a card grid and a compact list using the
@@ -31,6 +50,8 @@ The workflow publishes the repository root, where `index.html` is located.
   never included in it.
 - **Stats strip:** shows the total repositories currently shown, total stars,
   number of distinct languages, and the most-used language among them.
+- **Custom 404 page:** `404.html` uses the same design system and links back to
+  the dashboard; GitHub Pages serves it for unknown paths.
 
 ## Viewing repositories you can access
 

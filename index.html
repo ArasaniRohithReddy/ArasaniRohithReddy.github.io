@@ -16,7 +16,20 @@
       content="Browse repositories owned by ArasaniRohithReddy, with access enforced by GitHub."
     >
     <meta property="og:url" content="https://arasanirohithreddy.github.io/">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:image" content="https://arasanirohithreddy.github.io/assets/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta
+      property="og:image:alt"
+      content="ArasaniRohithReddy · Repositories — a GitHub repository dashboard."
+    >
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://arasanirohithreddy.github.io/assets/og-image.png">
+    <meta
+      name="twitter:image:alt"
+      content="ArasaniRohithReddy · Repositories — a GitHub repository dashboard."
+    >
     <meta name="twitter:title" content="ArasaniRohithReddy · Repositories">
     <meta
       name="twitter:description"
@@ -76,6 +89,18 @@
       <symbol id="icon-moon" viewBox="0 0 16 16">
         <path d="M11.63 12.9A6.25 6.25 0 0 1 7.1.37a.75.75 0 0 1 .86.98 5.25 5.25 0 0 0 6.7 6.7.75.75 0 0 1 .98.86 6.27 6.27 0 0 1-4.01 3.99Z"/>
       </symbol>
+      <symbol id="icon-copy" viewBox="0 0 16 16">
+        <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Zm5-5C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 16 16">
+        <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-6.5 6.5a.75.75 0 0 1-1.06 0l-3.25-3.25a.75.75 0 0 1 1.06-1.06l2.72 2.72 5.97-5.97a.75.75 0 0 1 1.06 0Z"/>
+      </symbol>
+      <symbol id="icon-link" viewBox="0 0 16 16">
+        <path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95ZM4.664 12.774a2 2 0 0 1 0-2.829l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0Z"/>
+      </symbol>
+      <symbol id="icon-sparkle" viewBox="0 0 16 16">
+        <path d="M7.53.146a.5.5 0 0 1 .94 0l1.2 3.28 3.28 1.2a.5.5 0 0 1 0 .94l-3.28 1.2-1.2 3.28a.5.5 0 0 1-.94 0l-1.2-3.28-3.28-1.2a.5.5 0 0 1 0-.94l3.28-1.2ZM3.6 10.2a.4.4 0 0 1 .75 0l.61 1.66 1.66.61a.4.4 0 0 1 0 .75l-1.66.61-.61 1.66a.4.4 0 0 1-.75 0l-.61-1.66-1.66-.61a.4.4 0 0 1 0-.75l1.66-.61Z"/>
+      </symbol>
       <symbol id="icon-monitor" viewBox="0 0 16 16">
         <path d="M1.75 2h12.5c.966 0 1.75.784 1.75 1.75v7c0 .966-.784 1.75-1.75 1.75H9v1h2.25a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5H7v-1H1.75A1.75 1.75 0 0 1 0 10.75v-7C0 2.784.784 2 1.75 2Zm0 1.5a.25.25 0 0 0-.25.25v7c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-7a.25.25 0 0 0-.25-.25H1.75Z"/>
       </symbol>
@@ -113,7 +138,7 @@
             </button>
           </div>
 
-          <div class="signin-area">
+          <div class="signin-area is-signed-out">
             <p id="signin-status" class="signin-status" hidden></p>
             <button id="open-signin" type="button">Sign in</button>
             <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
@@ -205,6 +230,22 @@
         </div>
       </section>
 
+      <section class="language-panel" aria-labelledby="language-panel-heading">
+        <div class="language-panel-head">
+          <h2 id="language-panel-heading">Language breakdown</h2>
+          <p id="language-summary" class="muted language-summary">
+            Language distribution loads with the repositories.
+          </p>
+        </div>
+        <div
+          id="language-bar"
+          class="language-bar"
+          role="img"
+          aria-label="Language distribution across the repositories currently shown"
+        ></div>
+        <ul id="language-legend" class="language-legend"></ul>
+      </section>
+
       <section class="repo-section" aria-labelledby="repo-heading">
         <div class="section-heading">
           <h2 id="repo-heading">Repositories</h2>
@@ -253,9 +294,33 @@
             </select>
           </div>
 
-          <button id="clear-filters" type="button" class="secondary clear-filters" hidden>
-            Clear filters<span id="active-filter-count"></span>
-          </button>
+          <div class="filter-field">
+            <label for="archived-filter">Archived</label>
+            <select id="archived-filter">
+              <option value="">Include</option>
+              <option value="hide">Hide archived</option>
+              <option value="only">Only archived</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="fork-filter">Forks</label>
+            <select id="fork-filter">
+              <option value="">Include</option>
+              <option value="hide">Hide forks</option>
+              <option value="only">Only forks</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button id="copy-view-link" type="button" class="secondary copy-view-link">
+              <svg class="icon" viewBox="0 0 16 16" focusable="false" aria-hidden="true"><use href="#icon-link"></use></svg>
+              Copy link to this view
+            </button>
+            <button id="clear-filters" type="button" class="secondary clear-filters" hidden>
+              Clear filters<span id="active-filter-count"></span>
+            </button>
+          </div>
         </div>
 
         <p id="result-count" class="muted result-count" role="status" aria-live="polite"></p>
@@ -272,10 +337,14 @@
           <button id="retry" type="button" class="secondary">Retry</button>
         </div>
         <div id="repo-grid" class="repo-grid" aria-busy="true"></div>
+        <div class="show-more-row">
+          <button id="show-more" type="button" class="secondary show-more" hidden></button>
+        </div>
         <div id="empty" class="empty-state" hidden>
           <h3>No repositories match your filters</h3>
           <p>Try clearing filters or changing your search.</p>
         </div>
+        <p id="copy-announcer" class="visually-hidden" role="status" aria-live="polite"></p>
       </section>
     </main>
 

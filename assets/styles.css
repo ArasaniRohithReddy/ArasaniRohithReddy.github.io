@@ -195,6 +195,11 @@ a:hover {
   gap: var(--space-6);
 }
 
+/* Single-column hero used by 404.html (no action column). */
+.hero--simple {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .hero-main {
   display: flex;
   align-items: center;
@@ -366,13 +371,29 @@ h1 {
   justify-content: flex-end;
   gap: var(--space-2);
   flex-wrap: nowrap;
-  width: 100%;
-  max-width: 48rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
   padding: var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 90%, transparent);
   box-shadow: var(--shadow-sm);
+}
+
+/* Signed out the area holds a single button, so the card chrome would render
+   as an empty box beside it. Strip it back to the bare button instead. */
+.signin-area.is-signed-out {
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.signin-area.is-signed-out button {
+  min-height: calc(2.35rem + var(--space-2) + 2px);
+  padding-inline: 1.1rem;
+  border-radius: 0.85rem;
 }
 
 .signin-status {
@@ -607,6 +628,71 @@ a:focus-visible {
   font-size: 0.8rem;
 }
 
+/* ---------- Language breakdown ---------- */
+
+.language-panel {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.language-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.language-panel-head h2 {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+}
+
+.language-summary {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.language-bar {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  height: 0.65rem;
+  border-radius: var(--radius-full);
+  background: var(--surface-muted);
+}
+
+.language-segment {
+  height: 100%;
+  min-width: 2px;
+}
+
+.language-bar--empty {
+  border: 1px dashed var(--border);
+}
+
+.language-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.language-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 /* ---------- Repo section ---------- */
 
 .section-heading {
@@ -622,11 +708,39 @@ a:focus-visible {
 }
 
 .filter-bar {
-  display: grid;
-  grid-template-columns: minmax(14rem, 1.35fr) repeat(3, minmax(9rem, 0.75fr)) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
+}
+
+.filter-bar .search-field {
+  flex: 2 1 18rem;
+}
+
+.filter-bar .filter-field {
+  flex: 1 1 9.5rem;
+}
+
+.filter-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.copy-view-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.copy-view-link.is-copied {
+  border-color: var(--success);
+  color: var(--success);
 }
 
 .token-error {
@@ -763,6 +877,11 @@ a:focus-visible {
     border-color var(--transition-medium);
 }
 
+.repo-grid > .repo-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 14rem;
+}
+
 .repo-card:hover {
   border-color: var(--accent);
   box-shadow: var(--shadow-md);
@@ -782,7 +901,12 @@ a:focus-visible {
   padding: var(--space-4) var(--space-5);
 }
 
-.repo-grid--list .repo-card:hover {
+.repo-grid--list .repo-grid > .repo-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 14rem;
+}
+
+.repo-card:hover {
   transform: none;
 }
 
@@ -868,6 +992,87 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.badge.featured {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.repo-card--featured {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.card-heading-side {
+  display: flex;
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.copy-clone {
+  position: relative;
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+}
+
+.copy-clone .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.copy-clone .icon + .icon {
+  display: none;
+}
+
+.copy-clone:hover {
+  border-color: var(--border);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.copy-clone.is-copied {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.copy-clone.is-copied .icon:first-of-type {
+  display: none;
+}
+
+.copy-clone.is-copied .icon + .icon {
+  display: inline-block;
+}
+
+.copy-clone-feedback {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  display: none;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--success);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.copy-clone.is-copied .copy-clone-feedback {
+  display: block;
+}
+
+.show-more-row {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
 .badge.private {
   border-color: var(--private);
   color: var(--private);
@@ -950,7 +1155,7 @@ a:focus-visible {
 }
 
 @supports not (color: color-mix(in srgb, white, black)) {
-  .signin-area {
+  .signin-area:not(.is-signed-out) {
     background: var(--surface);
   }
 
@@ -960,6 +1165,14 @@ a:focus-visible {
 
   .description.placeholder {
     color: var(--muted);
+  }
+
+  .badge.featured {
+    border-color: var(--accent);
+  }
+
+  .repo-card--featured {
+    border-color: var(--accent);
   }
 }
 
@@ -1041,7 +1254,9 @@ footer {
   }
 
   .signin-area {
+    width: 100%;
     max-width: none;
+    margin-left: 0;
   }
 
   .hero-actions {
@@ -1052,12 +1267,8 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filter-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .search-field {
-    grid-column: 1 / -1;
+  .filter-bar .search-field {
+    flex-basis: 100%;
   }
 }
 
@@ -1072,6 +1283,12 @@ footer {
     justify-content: flex-start;
   }
 
+  .signin-area button,
+  .signin-area.is-signed-out button {
+    min-height: 2.75rem;
+    width: 100%;
+  }
+
   .avatar {
     width: 88px;
     height: 88px;
@@ -1081,14 +1298,20 @@ footer {
     flex-wrap: wrap;
   }
 
-  .filter-bar {
-    grid-template-columns: 1fr;
+  .filter-bar .search-field,
+  .filter-bar .filter-field,
+  .filter-actions,
+  .filter-actions button {
+    flex-basis: 100%;
+    width: 100%;
   }
 
-  .search-field,
-  .filter-field,
-  .clear-filters {
-    width: 100%;
+  .filter-actions {
+    margin-left: 0;
+  }
+
+  .filter-actions button {
+    justify-content: center;
   }
 
   .repo-grid,

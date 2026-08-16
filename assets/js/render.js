@@ -57,17 +57,29 @@ function metric(iconName, count, singular, plural) {
   return item;
 }
 
+const MAX_TOPIC_CHIPS = 3;
+
 function topicChips(topics) {
   const wrap = document.createElement("div");
-  wrap.className = topics && topics.length > 0 ? "topics" : "topics topics--empty";
-  if (!topics || topics.length === 0) {
+  const list = Array.isArray(topics) ? topics : [];
+  wrap.className = "topics";
+  if (list.length === 0) {
     wrap.setAttribute("aria-hidden", "true");
     return wrap;
   }
-  for (const topic of topics.slice(0, 6)) {
+  for (const topic of list.slice(0, MAX_TOPIC_CHIPS)) {
     const chip = document.createElement("span");
     chip.className = "topic-chip";
     chip.textContent = topic;
+    chip.title = topic;
+    wrap.append(chip);
+  }
+  const overflow = list.length - MAX_TOPIC_CHIPS;
+  if (overflow > 0) {
+    const chip = document.createElement("span");
+    chip.className = "topic-chip topic-chip--more";
+    chip.textContent = `+${overflow}`;
+    chip.title = list.slice(MAX_TOPIC_CHIPS).join(", ");
     wrap.append(chip);
   }
   return wrap;
@@ -90,20 +102,36 @@ function copyCloneButton(repo) {
   return button;
 }
 
+function detailButton(repo) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "detail-open icon-button";
+  button.dataset.repoId = String(repo.id);
+  button.setAttribute("aria-label", `View details for ${repo.name}`);
+  button.title = `View details for ${repo.name}`;
+  button.append(icon("eye"));
+  return button;
+}
+
 export function createRepoCard(repo, { featured = false } = {}) {
   const article = document.createElement("article");
   article.className = `repo-card${repo.private ? " private" : ""}${
     featured ? " repo-card--featured" : ""
   }`;
+  article.dataset.repoId = String(repo.id);
 
-  const heading = document.createElement("div");
-  heading.className = "card-heading";
+  // Zone 1: header — title, badges and the copy button, at a fixed height so
+  // every card in a row lines up regardless of how long the repo name is.
+  const heading = document.createElement("header");
+  heading.className = "card-header";
   const title = document.createElement("h3");
+  title.className = "card-title";
   const link = document.createElement("a");
   link.href = `https://github.com/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(repo.name)}`;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   link.textContent = repo.name;
+  link.title = repo.name;
   title.append(link);
 
   const badges = document.createElement("div");
@@ -122,23 +150,33 @@ export function createRepoCard(repo, { featured = false } = {}) {
     archivedBadge.prepend(icon("archive"));
     badges.append(archivedBadge);
   }
-  const headingSide = document.createElement("div");
-  headingSide.className = "card-heading-side";
-  headingSide.append(badges);
+  // Title and the card actions share the first header row; badges always get
+  // their own row, so a long name can never push them out of place.
+  const actions = document.createElement("div");
+  actions.className = "card-header-actions";
+  actions.append(detailButton(repo));
   if (repo.clone_url) {
-    headingSide.append(copyCloneButton(repo));
+    actions.append(copyCloneButton(repo));
   }
-  heading.append(title, headingSide);
+  heading.append(title, actions, badges);
 
+  // Zone 2: body — description clamped to a fixed number of lines, then a
+  // single clamped row of topic chips.
+  const body = document.createElement("div");
+  body.className = "card-body";
   const description = document.createElement("p");
   description.className = repo.description ? "description" : "description placeholder";
   description.textContent = repo.description || "No description provided.";
-  if (!repo.description) {
+  if (repo.description) {
+    description.title = repo.description;
+  } else {
     description.setAttribute("aria-hidden", "true");
   }
+  body.append(description, topicChips(repo.topics));
 
-  const metadata = document.createElement("div");
-  metadata.className = "repo-meta";
+  // Zone 3: footer — pinned to the bottom so metrics align across the row.
+  const metadata = document.createElement("footer");
+  metadata.className = "card-footer repo-meta";
 
   if (repo.language) {
     const language = document.createElement("span");
@@ -164,9 +202,114 @@ export function createRepoCard(repo, { featured = false } = {}) {
   updated.append(updatedText);
   metadata.append(updated);
 
-  article.append(heading, description);
-  article.append(topicChips(repo.topics), metadata);
+  article.append(heading, body, metadata);
   return article;
+}
+
+function absoluteDate(value) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+
+function detailRow(label, value) {
+  const row = document.createElement("div");
+  row.className = "detail-row";
+  const term = document.createElement("dt");
+  term.textContent = label;
+  const definition = document.createElement("dd");
+  if (value instanceof Node) {
+    definition.append(value);
+  } else {
+    definition.textContent = value;
+  }
+  row.append(term, definition);
+  return row;
+}
+
+function externalLink(href, text) {
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  anchor.textContent = text;
+  return anchor;
+}
+
+/**
+ * Detail view for the repository dialog. Uses only fields already present in
+ * the repositories response — it never triggers another API request.
+ */
+export function createRepoDetail(repo) {
+  const fragment = document.createDocumentFragment();
+
+  const badges = document.createElement("div");
+  badges.className = "badges detail-badges";
+  const visibilityBadge = badge(repo.private ? "Private" : "Public", repo.private ? "private" : "");
+  visibilityBadge.prepend(icon(repo.private ? "lock" : "globe"));
+  badges.append(visibilityBadge);
+  if (repo.fork) badges.append(badge("Fork"));
+  if (repo.archived) badges.append(badge("Archived"));
+  fragment.append(badges);
+
+  const description = document.createElement("p");
+  description.className = repo.description ? "detail-description" : "detail-description placeholder";
+  description.textContent = repo.description || "No description provided.";
+  fragment.append(description);
+
+  if (Array.isArray(repo.topics) && repo.topics.length > 0) {
+    const topics = document.createElement("div");
+    topics.className = "topics detail-topics";
+    for (const topic of repo.topics) {
+      const chip = document.createElement("span");
+      chip.className = "topic-chip";
+      chip.textContent = topic;
+      topics.append(chip);
+    }
+    fragment.append(topics);
+  }
+
+  const list = document.createElement("dl");
+  list.className = "detail-grid";
+  list.append(
+    detailRow("Language", repo.language || "Not detected"),
+    detailRow("Stars", repo.stargazers_count.toLocaleString()),
+    detailRow("Forks", repo.forks_count.toLocaleString()),
+    detailRow("Watchers", (repo.watchers_count ?? 0).toLocaleString()),
+    detailRow("Open issues", (repo.open_issues_count ?? 0).toLocaleString()),
+    detailRow("License", repo.license?.name || "Not specified"),
+    detailRow("Default branch", repo.default_branch || "Unknown"),
+    detailRow("Size", `${(repo.size ?? 0).toLocaleString()} KB`),
+    detailRow("Created", absoluteDate(repo.created_at)),
+    detailRow("Updated", absoluteDate(repo.updated_at)),
+    detailRow("Last push", absoluteDate(repo.pushed_at)),
+  );
+  if (repo.homepage) {
+    list.append(detailRow("Homepage", externalLink(repo.homepage, repo.homepage)));
+  }
+  fragment.append(list);
+
+  const actions = document.createElement("div");
+  actions.className = "detail-actions";
+  actions.append(
+    externalLink(
+      `https://github.com/${encodeURIComponent(repo.owner.login)}/${encodeURIComponent(repo.name)}`,
+      "Open on GitHub",
+    ),
+  );
+  if (repo.clone_url) {
+    const cloneRow = document.createElement("div");
+    cloneRow.className = "detail-clone";
+    const code = document.createElement("code");
+    code.textContent = repo.clone_url;
+    const copyButton = copyCloneButton(repo);
+    copyButton.classList.add("detail-copy");
+    cloneRow.append(code, copyButton);
+    actions.append(cloneRow);
+  }
+  fragment.append(actions);
+
+  return fragment;
 }
 
 export function computeStats(repositories) {
@@ -197,7 +340,7 @@ export function computeStats(repositories) {
  * Language distribution across the supplied repositories, derived from the
  * already-fetched `repo.language` field. Never issues extra API requests.
  */
-export function computeLanguageBreakdown(repositories, maxSlices = 6) {
+export function computeLanguageBreakdown(repositories, maxSlices = 6, minPercent = 3) {
   const counts = new Map();
   let counted = 0;
   for (const repo of repositories) {
@@ -210,20 +353,27 @@ export function computeLanguageBreakdown(repositories, maxSlices = 6) {
     (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
   );
 
-  const slices = sorted.slice(0, maxSlices).map(([language, count]) => ({
-    language,
-    count,
-    percent: (count / counted) * 100,
-    color: languageColor(language),
-  }));
+  const slices = [];
+  const grouped = [];
+  for (const [index, [language, count]] of sorted.entries()) {
+    const percent = (count / counted) * 100;
+    // Very small slices are unreadable, so they roll up into "Other" alongside
+    // anything beyond the maximum slice count.
+    if (index >= maxSlices || (percent < minPercent && sorted.length > maxSlices)) {
+      grouped.push({ language, count, percent });
+      continue;
+    }
+    slices.push({ language, count, percent, color: languageColor(language) });
+  }
 
-  const remainder = sorted.slice(maxSlices).reduce((sum, [, count]) => sum + count, 0);
-  if (remainder > 0) {
+  if (grouped.length > 0) {
+    const remainder = grouped.reduce((sum, entry) => sum + entry.count, 0);
     slices.push({
       language: "Other",
       count: remainder,
       percent: (remainder / counted) * 100,
       color: "var(--muted)",
+      grouped,
     });
   }
 
